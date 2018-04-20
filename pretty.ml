@@ -7,8 +7,8 @@ let rec print_expr fmt = function
       fprintf fmt "%s" id
   | _, Pfloat v ->
       fprintf fmt "%f" v
-  | _, Pinterval (lb,ub) ->
-      fprintf fmt "[%f,%f]" lb ub
+  | _, Pinterval v ->
+      fprintf fmt "%a" Interval.print v
   | _, Papp1 (op,expr) ->
       fprintf fmt "%s(%a)" (str_of_op1 op) print_expr expr
   | _, Papp2 (op,e1,e2) ->

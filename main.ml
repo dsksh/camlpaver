@@ -2,6 +2,7 @@ open Format
 open Lexing
 open Pretty
 open Model_common
+open Interval
 
 let spec = [
 ]
@@ -17,13 +18,15 @@ let cin =
 let () =
   let lb = from_channel cin in
   try
-    let dom,cs = Parser.main Lexer.token lb in 
-    let pr k d = printf "%s in [%f,%f];@." k (fst d) (snd d) in
-    MDom.iter pr dom;
+    let sc,dom,cs = Parser.main Lexer.token lb in 
+    close_in cin;
+
+    let pr n i = printf "%s in %a;@." n Interval.print (List.nth dom i) in
+    Hashtbl.iter pr sc;
     let pr c = printf "%a;@." print_constr c in
     let _ = List.map pr cs in
-    let _ = Interval.intv_add 0. 1. 2. 3. in
-    close_in cin;
+
+    ()
   with
   | _ ->
     printf "unexpected error\n@.";

@@ -64,7 +64,7 @@ value intv_pow(value inf, value sup, value e) {
 value intv_str_of(value inf, value sup) {
   CAMLparam2(inf, sup);
   CAMLlocal1(str);
-  char *cs = kv_str_of_intv(inf, sup);
+  char *cs = kv_str_of_intv(Double_val(inf), Double_val(sup));
   if (cs != NULL) {
     str = caml_copy_string(cs);
     free(cs);

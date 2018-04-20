@@ -1,21 +1,26 @@
 %{
   open Model_common  
   open Ptree
+  open Interval
 
   let create_id name idx = String.concat "" [name; "["; string_of_int idx; "]"]
 
-  let env = ref MEnv.empty
-  let dom = ref MDom.empty
+  let env = Hashtbl.create 8
+  let scope = Hashtbl.create 8
+  let dom = ref []
 
-  let add_obj id o = env := MEnv.add id o !env
+  let add_var id d = 
+    Hashtbl.add env id (Pvar id); 
+    Hashtbl.add scope id (List.length !dom);
+    dom := List.append !dom [d]
+
   let rec add_vars id n d = 
     if n > 0 then begin 
       let id_ = create_id id (n-1) in
-      env := MEnv.add id_ (Pvar id_) !env; 
-      dom := MDom.add id_ d !dom;
+      add_var id_ d;
       add_vars id (n-1) d end
 
-  let get_var id = MEnv.find id !env
+  let get_var id = Hashtbl.find env id
 
   let loc () = symbol_start_pos (), symbol_end_pos ()
 
@@ -89,7 +94,7 @@
 /**/
 
 %start main
-%type <(float*float) Model_common.MDom.t * Ptree.constr list> main 
+%type <(string,int) Hashtbl.t * Interval.t list * Ptree.constr list> main 
 
 %%
 
@@ -97,36 +102,35 @@ main :
   | CONST constants
     VAR variables
     CONSTR constrs 
-    END EOF                 { !dom, $6 } 
+    END EOF                 { scope, !dom, $6 } 
   | VAR variables
     CONSTR constrs 
-    END EOF                 { !dom, $4 } 
+    END EOF                 { scope, !dom, $4 } 
   ; 
 
 /**/
 
 constants :
   | ID EQ signed_number SCOL constants
-                            { env := MEnv.add $1 (Pfloat $3) !env }
+                            { Hashtbl.add env $1 (Pfloat $3) }
   | ID EQ interval SCOL constants
-                            { env := MEnv.add $1 (Pinterval (fst $3, snd $3)) !env }
+                            { Hashtbl.add env $1 (Pinterval $3) }
   | ID EQ MIN interval SCOL constants
-                            { env := MEnv.add $1 (Pinterval (-. fst $4, -. snd $4)) !env }
+                            { Hashtbl.add env $1 (Pinterval (Interval.zero -$ $4)) }
   |                         { }
 
 /**/
 
 variables :
   | ID IN interval SCOL variables 
-                            { env := MEnv.add $1 (Pvar $1) !env; 
-                              dom := MDom.add $1 $3 !dom }
+                            { add_var $1 $3 }
   | ID LB INT RB IN interval SCOL variables 
                             { add_vars $1 $3 $6 }
   |                         { }
   ;
 
 interval :
-  | LB signed_number COM signed_number RB { ($2,$4) }
+  | LB signed_number COM signed_number RB { {inf=$2; sup=$4} }
   ;
 
 signed_number :
@@ -184,6 +188,6 @@ const :
   | FLOAT                   { Pfloat $1 }
   | INT                     { Pfloat (float_of_int $1) }
   | INF                     { Pfloat infinity }
-  | interval                { Pinterval (fst $1, snd $1) }
+  | interval                { Pinterval $1 }
   ;
 

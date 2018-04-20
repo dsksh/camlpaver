@@ -23,6 +23,8 @@ external intv_acos: float -> float -> t = "intv_acos"
 external intv_atan: float -> float -> t = "intv_atan"
 external intv_str_of: float -> float -> string = "intv_str_of"
 
+let%test _ = intv_add 1. 2. 3. 4. = {inf=4.; sup=6.}
+
 let (+$) x y = intv_add x.inf x.sup y.inf y.sup
 let (-$) x y = intv_sub x.inf x.sup y.inf y.sup
 let ( *$) x y = intv_mul x.inf x.sup y.inf y.sup
@@ -42,4 +44,6 @@ let acos x = intv_acos x.inf x.sup
 let atan x = intv_atan x.inf x.sup
 
 let string_of_intv x = intv_str_of x.inf x.sup
+
+let print fmt x = Format.fprintf fmt "%s" (string_of_intv x)
 
