@@ -1,21 +1,55 @@
 open Format
 open Ptree
 open Model_common
+open Expr
+open Hashcons
 
-let rec print_expr fmt = function 
+(* printers for Ptree *)
+
+let rec print_pexpr fmt = function 
   | _, Pvar id -> 
       fprintf fmt "%s" id
   | _, Pfloat v ->
       fprintf fmt "%f" v
-  | _, Pinterval v ->
+  | _, Pintv v ->
       fprintf fmt "%a" Interval.print v
   | _, Papp1 (op,expr) ->
-      fprintf fmt "%s(%a)" (str_of_op1 op) print_expr expr
+      fprintf fmt "%s(%a)" (str_of_op1 op) print_pexpr expr
   | _, Papp2 (op,e1,e2) ->
+      fprintf fmt "(%a %s %a)" print_pexpr e1 (str_of_op2 op) print_pexpr e2
+  | _, Ppow (n,e) ->
+      fprintf fmt "%a^%d" print_pexpr e n
+
+let print_ptree fmt constr = 
+  let _, (op, e1, e2) = constr in
+    fprintf fmt "%a %s %a" print_pexpr e1 (str_of_rop op) print_pexpr e2
+
+
+(* printers for Expr *)
+
+let rec print_expr fmt expr = 
+  match expr.node with
+  | Var id -> 
+      fprintf fmt "%s" id
+  | Val v -> 
+      fprintf fmt "%a" Interval.print v
+  | App1 (op,expr) ->
+      fprintf fmt "%s(%a)" (str_of_op1 op) print_expr expr
+  | App2 (op,e1,e2) ->
       fprintf fmt "(%a %s %a)" print_expr e1 (str_of_op2 op) print_expr e2
-  | _, Ppow (e,expr) ->
-      fprintf fmt "%a^%d" print_expr expr e
+  | Pow (n,e) ->
+      fprintf fmt "%a^%d" print_expr e n
+
+let print_dual fmt = function
+  | e, ds -> 
+      fprintf fmt "@[<2>";
+      print_expr fmt e;
+      fprintf fmt "@;@[<2>{@;";
+      let pr d = fprintf fmt "%a;@;" print_expr d in
+      let _ = List.map pr ds in
+      fprintf fmt "}@]@,@]"
 
 let print_constr fmt constr = 
-  let _, (op, e1, e2) = constr in
-    fprintf fmt "%a %s %a" print_expr e1 (str_of_rop op) print_expr e2
+  let op, e1, e2 = constr in
+  fprintf fmt "%a@;%s@;%a" print_dual e1 (str_of_rop op) print_dual e2
+

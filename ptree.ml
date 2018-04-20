@@ -10,7 +10,7 @@ type expr = loc * expr_node
 and  expr_node =
   | Pvar of ident
   | Pfloat of float
-  | Pinterval of Interval.t
+  | Pintv of Interval.t
   | Papp1 of un_op * expr
   | Papp2 of bin_op * expr * expr
   | Ppow of int * expr

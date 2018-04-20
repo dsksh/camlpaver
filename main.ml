@@ -18,12 +18,18 @@ let cin =
 let () =
   let lb = from_channel cin in
   try
-    let sc,dom,cs = Parser.main Lexer.token lb in 
+    let map,dom,cs = Parser.main Lexer.token lb in 
     close_in cin;
 
-    let pr n i = printf "%s in %a;@." n Interval.print (List.nth dom i) in
-    Hashtbl.iter pr sc;
-    let pr c = printf "%a;@." print_constr c in
+    let sc = Box.Scope.create map dom in
+    printf "%a@.@." Box.Scope.print sc;
+
+    let pr c = printf "%a;@.@." print_ptree c in
+    let _ = List.map pr cs in
+
+    let vs = Box.Scope.to_var_list sc in
+    let cs = List.map (Expr.mk_constr vs) cs in
+    let pr c = printf "%a;@.@." print_constr c in
     let _ = List.map pr cs in
 
     ()
@@ -31,3 +37,4 @@ let () =
   | _ ->
     printf "unexpected error\n@.";
     exit 1
+

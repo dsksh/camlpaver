@@ -5,8 +5,8 @@
 
   let create_id name idx = String.concat "" [name; "["; string_of_int idx; "]"]
 
-  let env = Hashtbl.create 8
-  let scope = Hashtbl.create 8
+  let env = Hashtbl.create 61
+  let scope = Hashtbl.create 61
   let dom = ref []
 
   let add_var id d = 
@@ -114,9 +114,9 @@ constants :
   | ID EQ signed_number SCOL constants
                             { Hashtbl.add env $1 (Pfloat $3) }
   | ID EQ interval SCOL constants
-                            { Hashtbl.add env $1 (Pinterval $3) }
+                            { Hashtbl.add env $1 (Pintv $3) }
   | ID EQ MIN interval SCOL constants
-                            { Hashtbl.add env $1 (Pinterval (Interval.zero -$ $4)) }
+                            { Hashtbl.add env $1 (Pintv (Interval.zero -$ $4)) }
   |                         { }
 
 /**/
@@ -188,6 +188,6 @@ const :
   | FLOAT                   { Pfloat $1 }
   | INT                     { Pfloat (float_of_int $1) }
   | INF                     { Pfloat infinity }
-  | interval                { Pinterval $1 }
+  | interval                { Pintv $1 }
   ;
 

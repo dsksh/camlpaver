@@ -3,7 +3,7 @@ type rational = int * int
 
 type ident = string
 
-type un_op = Osqr | Osqrt | Oexp | Olog | Osin | Ocos | Oatan | Oasin | Oacos
+type un_op = Osqr | Osqrt | Oexp | Olog | Osin | Ocos | Otan | Oasin | Oacos | Oatan
 
 type bin_op = Oadd | Osub | Omul | Odiv
 
@@ -16,6 +16,7 @@ let str_of_op1 = function
   | Olog -> "log"
   | Osin -> "sin"
   | Ocos -> "cos"
+  | Otan -> "tan"
   | Oatan -> "atan"
   | Oasin -> "asin"
   | Oacos -> "acos"
@@ -33,6 +34,3 @@ let str_of_rop = function
   | Ogt -> ">" 
   | Oge -> ">=" 
 
-
-module MEnv = Map.Make(String)
-module MDom = Map.Make(String)

@@ -43,6 +43,8 @@ let asin x = intv_asin x.inf x.sup
 let acos x = intv_acos x.inf x.sup
 let atan x = intv_atan x.inf x.sup
 
+let intv_of_float x = {inf=x; sup=x}
+
 let string_of_intv x = intv_str_of x.inf x.sup
 
 let print fmt x = Format.fprintf fmt "%s" (string_of_intv x)
