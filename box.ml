@@ -3,7 +3,7 @@ module Scope = struct
 
   type t = {
     map : (string,int) Hashtbl.t;
-    dom: Interval.t array;
+    dom : Interval.t array;
   }
   
   let create map dom =
@@ -29,4 +29,9 @@ type t = Interval.t array
 
 let make sc = Array.make (Hashtbl.length sc.map) Interval.zero
 
+let print fmt (sc, t) =
+  let pr n i = Format.fprintf fmt "%s in %a;@;" n Interval.print (t.(i)) in
+  Format.fprintf fmt "@[";
+  Hashtbl.iter pr sc.map;
+  Format.fprintf fmt "@]"
 

@@ -41,6 +41,7 @@ DEF_UN_OP(kv_tan, tan)
 DEF_UN_OP(kv_asin, asin)
 DEF_UN_OP(kv_acos, acos)
 DEF_UN_OP(kv_atan, atan)
+DEF_UN_OP(kv_abs, abs)
 
 cInterval kv_pow(const double inf, const double sup, const int e) {
   interval<double> intv(inf, sup);
@@ -48,6 +49,18 @@ cInterval kv_pow(const double inf, const double sup, const int e) {
   cInterval res = {intvR.lower(), intvR.upper()};
   return res;
 }
+
+#define DEF_ATTR(NAME, FUN) \
+  double NAME(const double inf, const double sup) { \
+    interval<double> intv(inf, sup); \
+    double res( FUN(intv) ); \
+    return res; \
+  }
+
+DEF_ATTR(kv_width, width)
+DEF_ATTR(kv_rad, rad)
+DEF_ATTR(kv_mid, mid)
+DEF_ATTR(kv_norm, norm)
 
 char *kv_str_of_intv(const double inf, const double sup) {
   interval<double> intv(inf, sup);

@@ -48,6 +48,7 @@ DEF_UN_OP(intv_tan, kv_tan)
 DEF_UN_OP(intv_asin, kv_asin)
 DEF_UN_OP(intv_acos, kv_acos)
 DEF_UN_OP(intv_atan, kv_atan)
+DEF_UN_OP(intv_abs, kv_abs)
  
 value intv_pow(value inf, value sup, value e) {
   CAMLparam3(inf, sup, e);
@@ -60,6 +61,18 @@ value intv_pow(value inf, value sup, value e) {
   Store_field(intv, 1, caml_copy_double(res.sup));
   CAMLreturn(intv);
 }
+
+#define DEF_ATTR(NAME, IMPL) \
+  CAMLprim value NAME(value inf, value sup) { \
+    CAMLparam2(inf, sup); \
+    \
+    CAMLreturn(caml_copy_double( IMPL(Double_val(inf), Double_val(sup) ) )); \
+  }
+
+DEF_ATTR(intv_width, kv_width)
+DEF_ATTR(intv_rad, kv_rad)
+DEF_ATTR(intv_mid, kv_mid)
+DEF_ATTR(intv_norm, kv_norm)
 
 value intv_str_of(value inf, value sup) {
   CAMLparam2(inf, sup);

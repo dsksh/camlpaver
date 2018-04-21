@@ -22,6 +22,11 @@ cInterval kv_tan(const double, const double);
 cInterval kv_asin(const double, const double);
 cInterval kv_acos(const double, const double);
 cInterval kv_atan(const double, const double);
+cInterval kv_abs(const double, const double);
+double kv_width(const double, const double);
+double kv_rad(const double, const double);
+double kv_mid(const double, const double);
+double kv_norm(const double, const double);
 char *kv_str_of_intv(const double, const double);
 
 #ifdef __cplusplus

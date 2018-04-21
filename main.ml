@@ -4,13 +4,14 @@ open Pretty
 open Model_common
 open Interval
 
+(* TODO *)
 let spec = [
 ]
 
 let file = ref "stdin"
 let cin =
   let ofile = ref None in
-  Arg.parse spec (fun s -> ofile := Some s) "usage: ...";
+  Arg.parse spec (fun s -> ofile := Some s) "usage: ..."; (* TODO *)
   match !ofile with
     | Some f -> file := f ; open_in f
     | None -> stdin
@@ -31,6 +32,10 @@ let () =
     let cs = List.map (Expr.mk_constr vs) cs in
     let pr c = printf "%a;@.@." print_constr c in
     let _ = List.map pr cs in
+
+    let box = Array.copy sc.dom in
+    let ctr c = Contractor_hull.contract c sc box in
+    let _ = List.map ctr cs in
 
     ()
   with
