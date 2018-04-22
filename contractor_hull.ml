@@ -13,13 +13,13 @@ let set_bwd at expr v =
   a.bwd <- v
 
 
-let rec fwd_eval at sc box expr = 
-  let rc e = fwd_eval at sc box e in
+let rec fwd_eval at box expr = 
+  let rc e = fwd_eval at box e in
 
   let v = match expr.node with
   | Var n -> 
-(*printf "  Var %s: %a\n" n Interval.print box.(Hashtbl.find sc.map n);*)
-      box.(Hashtbl.find sc.map n)
+(*printf "  Var %s: %a\n" n Interval.print box.v.(Hashtbl.find box.s.table n);*)
+      Box.get box n
 
   | Val v -> v
 
@@ -59,8 +59,8 @@ let rec fwd_eval at sc box expr =
   v
 
 
-let rec bwd_propag at expr sc box =
-  let rc e = bwd_propag at e sc box in
+let rec bwd_propag at expr box =
+  let rc e = bwd_propag at e box in
 
   let fwd e = (Hashtbl.find at e.hkey).fwd in
   let bwd e = (Hashtbl.find at e.hkey).bwd in
@@ -68,8 +68,9 @@ let rec bwd_propag at expr sc box =
 
   match expr.node with
   | Var n -> 
-      let i = Hashtbl.find sc.map n in
-      box.(i) <- intersect box.(i) (bwd expr)
+      let i = Hashtbl.find box.s.table n in
+      let v = intersect box.v.(i) (bwd expr) in
+      Box.set box n v
 
   | Val v -> ()
 
@@ -122,13 +123,13 @@ let rec bwd_propag at expr sc box =
   | _ -> assert false (* TODO *)
 
 
-let contract constr sc box =
+let contract constr box =
   let at = Hashtbl.create 61 in
   let op, (e1,_), (e2,_) = constr in
 
   (* forward propagation *)
-  let v1 = fwd_eval at sc box e1 in
-  let v2 = fwd_eval at sc box e2 in
+  let v1 = fwd_eval at box e1 in
+  let v2 = fwd_eval at box e2 in
 
   printf "after fwd:@.";
   printf "%a@." Interval.print v1;
@@ -139,27 +140,27 @@ let contract constr sc box =
   | Oeq ->
       let v = Interval.intersect v1 v2 in
       set_bwd at e1 v;
-      bwd_propag at e1 sc box;
+      bwd_propag at e1 box;
       set_bwd at e2 v;
-      bwd_propag at e2 sc box
+      bwd_propag at e2 box
   | Olt
   | Ole ->
       let v = join (intv_of_float neg_infinity) v2 in
       set_bwd at e1 (intersect v1 v);
-      bwd_propag at e1 sc box;
+      bwd_propag at e1 box;
       let v = join v1 (intv_of_float infinity) in
       set_bwd at e2 (intersect v2 v);
-      bwd_propag at e2 sc box
+      bwd_propag at e2 box
   | Ogt
   | Oge ->
       let v = join v2 (intv_of_float infinity) in
       set_bwd at e1 (intersect v1 v);
-      bwd_propag at e1 sc box;
+      bwd_propag at e1 box;
       let v = join (intv_of_float infinity) v1 in
       set_bwd at e2 (intersect v2 v);
-      bwd_propag at e2 sc box;
+      bwd_propag at e2 box;
   end;
 
   printf "after bwd:@.";
-  printf "%a@." Box.print (sc,box)
+  printf "%a@." Box.print box
 

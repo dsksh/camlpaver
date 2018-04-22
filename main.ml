@@ -19,22 +19,22 @@ let cin =
 let () =
   let lb = from_channel cin in
   try
-    let map,dom,cs = Parser.main Lexer.token lb in 
+    let vt,iv_l,cs = Parser.main Lexer.token lb in 
     close_in cin;
 
-    let sc = Box.Scope.create map dom in
-    printf "%a@.@." Box.Scope.print sc;
+    let sc = Box.Scope.make vt iv_l in
+    let box = Box.make sc in
+    printf "%a@.@." Box.print box;
 
     let pr c = printf "%a;@.@." print_ptree c in
     let _ = List.map pr cs in
 
-    let vs = Box.Scope.to_var_list sc in
+    let vs = sc.vn_list in
     let cs = List.map (Expr.mk_constr vs) cs in
     let pr c = printf "%a;@.@." print_constr c in
     let _ = List.map pr cs in
 
-    let box = Array.copy sc.dom in
-    let ctr c = Contractor_hull.contract c sc box in
+    let ctr c = Contractor_hull.contract c box in
     let _ = List.map ctr cs in
 
     ()

@@ -122,10 +122,10 @@ constants :
 /**/
 
 variables :
-  | ID IN interval SCOL variables 
-                            { add_var $1 $3 }
-  | ID LB INT RB IN interval SCOL variables 
-                            { add_vars $1 $3 $6 }
+  | variables ID IN interval SCOL
+                            { add_var $2 $4 }
+  | variables ID LB INT RB IN interval SCOL
+                            { add_vars $2 $4 $7 }
   |                         { }
   ;
 

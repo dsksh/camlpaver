@@ -49,6 +49,7 @@ let ht = Hexpr.create 251
 
 let mk_var n = Hexpr.hashcons ht (Var n)
 let mk_val v = Hexpr.hashcons ht (Val v)
+
 let mk_app1 op e = match op,e.node with
   | (Osqr|Osqrt|Osin),Val z when z = Interval.zero -> e
   | (Oexp|Ocos),Val z when z = Interval.zero ->
@@ -57,13 +58,17 @@ let mk_app1 op e = match op,e.node with
   | Olog,Val z when z = Interval.one ->
       Hexpr.hashcons ht (Val Interval.zero)
   | _ -> Hexpr.hashcons ht (App1 (op,e))
+
 let mk_app2 op e1 e2 = match op,e1.node,e2.node with
   | Oadd,Val z,_  when z = Interval.zero -> e2
   | (Oadd|Osub),_,Val z when z = Interval.zero -> e1
   | Odiv,_,Val z when z.inf <= 0. && 0. <= z.sup -> assert false
   | Omul,Val z,_ when z = Interval.one -> e2
   | (Omul|Odiv),_,Val z when z = Interval.one -> e1
+  | (Omul|Odiv),Val z,_ when z = Interval.zero -> e1
+  | Omul,_,Val z when z = Interval.zero -> e2
   | _ -> Hexpr.hashcons ht (App2 (op,e1,e2))
+
 let mk_pow i e = match i,e.node with
   | 0,_ -> Hexpr.hashcons ht (Val Interval.one)
   | 1,_ -> e
