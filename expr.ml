@@ -133,7 +133,7 @@ let mk_dual_expr vs e =
   (e, de)
 
 
-(* make the subtraction expression lhs - rhs *)
+(* make subtraction expression lhs - rhs *)
 let mk_diff_expr vs (e1,_) (e2,_) =
   let e = mk_app2 Osub e1 e2 in
   let de = List.map (fun v -> diff_expr v e) vs in

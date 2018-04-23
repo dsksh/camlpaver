@@ -49,6 +49,10 @@ let set t vn v =
 
 let get_vn_list t = t.s.vn_list
 
+let get_vn t idx = List.nth t.s.vn_list idx
+
+let get_index t vn = Hashtbl.find t.s.table vn
+
 let dim t =
   Hashtbl.length t.s.table
 
