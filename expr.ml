@@ -76,7 +76,7 @@ let mk_pow i e = match i,e.node with
 
 let rec mk_expr = function
   | _, Pvar id -> mk_var id
-  | _, Pfloat v -> mk_val (Interval.intv_of_float v)
+  | _, Pfloat v -> mk_val (Interval.of_float v)
   | _, Pintv v -> mk_val v
   | _, Papp1 (op,e) -> mk_app1 op (mk_expr e)
   | _, Papp2 (op,e1,e2) -> mk_app2 op (mk_expr e1) (mk_expr e2)
@@ -88,50 +88,74 @@ let rec mk_expr = function
 let rec diff_expr vid expr =
   let diff = diff_expr vid in
   match expr.node with
-    | Var id -> if id = vid then mk_val Interval.one else mk_val Interval.zero
-    | Val _ -> mk_val Interval.zero
+  | Var id -> if id = vid then mk_val Interval.one else mk_val Interval.zero
+  | Val _ -> mk_val Interval.zero
 
-    | App1 (Osqr,e) ->
-        (mk_app2 Omul (diff e) (mk_app2 Omul (mk_val (Interval.intv_of_float 2.)) e))
-    | App1 (Osqrt,e) ->
-        (mk_app2 Odiv (diff e) (mk_app2 Omul 
-          (mk_val (Interval.intv_of_float 2.)) (mk_app1 Osqrt e) ))
-    | App1 (Oexp,e) ->
-        (mk_app2 Omul (mk_app1 Oexp e) (diff e))
-    | App1 (Olog,e) ->
-        (mk_app2 Odiv (diff e) e)
-    | App1 (Osin,e) ->
-        (mk_app2 Omul (mk_app1 Ocos e) (diff e))
-    | App1 (Ocos,e) ->
-        (mk_app2 Omul (mk_app2 Osub (mk_val Interval.zero) 
-          (mk_app1 Osin e)) (diff e) )
-    | App1 (Oatan,e) ->
-        (mk_app2 Omul (mk_app2 Odiv (mk_val Interval.one) 
-          (mk_app2 Oadd (mk_val Interval.one) (mk_app1 Osqr e)) ) (diff e) )
-    | App1 _ -> assert false
+  | App1 (Osqr,e) ->
+      (mk_app2 Omul (diff e) (mk_app2 Omul (mk_val (Interval.of_float 2.)) e))
+  | App1 (Osqrt,e) ->
+      (mk_app2 Odiv (diff e) (mk_app2 Omul 
+        (mk_val (Interval.of_float 2.)) (mk_app1 Osqrt e) ))
+  | App1 (Oexp,e) ->
+      (mk_app2 Omul (mk_app1 Oexp e) (diff e))
+  | App1 (Olog,e) ->
+      (mk_app2 Odiv (diff e) e)
+  | App1 (Osin,e) ->
+      (mk_app2 Omul (mk_app1 Ocos e) (diff e))
+  | App1 (Ocos,e) ->
+      (mk_app2 Omul (mk_app2 Osub (mk_val Interval.zero) 
+        (mk_app1 Osin e)) (diff e) )
+  | App1 (Oatan,e) ->
+      (mk_app2 Omul (mk_app2 Odiv (mk_val Interval.one) 
+        (mk_app2 Oadd (mk_val Interval.one) (mk_app1 Osqr e)) ) (diff e) )
+  | App1 _ -> assert false
 
-    | App2 (Oadd,e1,e2) ->
-        (mk_app2 Oadd (diff e1) (diff e2))
-    | App2 (Osub,e1,e2) ->
-        (mk_app2 Osub (diff e1) (diff e2))
-    | App2 (Omul,e1,e2) ->
-        (mk_app2 Oadd (mk_app2 Omul (diff e1) e2) (mk_app2 Omul e1 (diff e2)))
-    | App2 (Odiv,e1,e2) ->
-        (mk_app2 Odiv (mk_app2 Osub (mk_app2 Omul (diff e1) e2) 
-          (mk_app2 Omul e1 (diff e2))) (mk_app1 Osqr e2) )
+  | App2 (Oadd,e1,e2) ->
+      (mk_app2 Oadd (diff e1) (diff e2))
+  | App2 (Osub,e1,e2) ->
+      (mk_app2 Osub (diff e1) (diff e2))
+  | App2 (Omul,e1,e2) ->
+      (mk_app2 Oadd (mk_app2 Omul (diff e1) e2) (mk_app2 Omul e1 (diff e2)))
+  | App2 (Odiv,e1,e2) ->
+      (mk_app2 Odiv (mk_app2 Osub (mk_app2 Omul (diff e1) e2) 
+        (mk_app2 Omul e1 (diff e2))) (mk_app1 Osqr e2) )
 
-    | Pow (i,e) ->
-        let i_ = mk_val (Interval.intv_of_float (float_of_int i)) in
-        if i = 3  then
-          (mk_app2 Omul (diff e) (mk_app2 Omul i_ (mk_app1 Osqr e)))
-        else
-          (mk_app2 Omul (diff e) (mk_app2 Omul i_ (mk_pow (i-1) e)))
+  | Pow (n,e) ->
+      let n_ = mk_val (Interval.of_int n) in
+      if n = 3  then
+        (mk_app2 Omul (diff e) (mk_app2 Omul n_ (mk_app1 Osqr e)))
+      else
+        (mk_app2 Omul (diff e) (mk_app2 Omul n_ (mk_pow (n-1) e)))
 
 let mk_dual_expr vs e =
   let e = mk_expr e in
   let de = List.map (fun v -> diff_expr v e) vs in
   (e, de)
 
+
+(* make the subtraction expression lhs - rhs *)
+let mk_diff_expr vs (e1,_) (e2,_) =
+  let e = mk_app2 Osub e1 e2 in
+  let de = List.map (fun v -> diff_expr v e) vs in
+  (e, de)
+
+
+(* evaluation *)
+
+let rec eval box expr = 
+  match expr.node with
+  | Var n -> Box.get box n
+  | Val v -> v
+  | App1 (op,e) -> 
+      let v = eval box e in
+      (impl_of_op1 op) v
+  | App2 (op,e1,e2) ->
+      let v1 = eval box e1 in
+      let v2 = eval box e2 in
+      (impl_of_op2 op) v1 v2
+  | Pow (n,e) ->
+      let v = eval box e in
+      Interval.pow v n
 
 (* *)
 

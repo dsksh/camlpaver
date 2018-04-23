@@ -38,16 +38,31 @@ let make s =
   let v = Array.copy s.iv in
   { s = s; v = v; }
 
+let ind_of t vn =
+  Hashtbl.find t.s.table vn
+
 let get t vn =
-  let i = Hashtbl.find t.s.table vn in
-  t.v.(i)
+  t.v.(ind_of t vn)
 
 let set t vn v =
-  let i = Hashtbl.find t.s.table vn in
-  t.v.(i) <- v
+  t.v.(ind_of t vn) <- v
 
-let length t =
+let get_vn_list t = t.s.vn_list
+
+let dim t =
   Hashtbl.length t.s.table
+
+let width t =
+  let r = ref 0. in
+  let f v = if Interval.width v > !r then r := Interval.width v in
+  Array.iter f t.v;
+  !r
+
+let is_empty t =
+  let r = ref false in
+  let f v = if Interval.is_empty v then r := true in
+  Array.iter f t.v;
+  !r
 
 let print fmt t =
   let f = ref true in

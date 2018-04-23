@@ -34,3 +34,21 @@ let str_of_rop = function
   | Ogt -> ">" 
   | Oge -> ">=" 
 
+let impl_of_op1 = function
+  | Oexp -> Interval.exp
+  | Olog -> Interval.log
+  | Osqr -> fun v -> Interval.pow v 2
+  | Osqrt -> Interval.sqrt
+  | Osin -> Interval.sin
+  | Ocos -> Interval.cos
+  | Otan -> Interval.tan
+  | Oasin -> Interval.asin
+  | Oacos -> Interval.acos
+  | Oatan -> Interval.atan
+
+let impl_of_op2 = function
+  | Oadd -> Interval.(+$)
+  | Osub -> Interval.(-$)
+  | Omul -> Interval.( *$)
+  | Odiv -> Interval.(/$)
+

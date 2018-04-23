@@ -37,6 +37,14 @@ let () =
     let ctr c = Contractor_hull.contract c box in
     let _ = List.map ctr cs in
 
+    let ctr c = 
+      let ctr_ vn =
+        let t = Contractor_box.init c vn box in
+        Contractor_box.contract t in
+      let _ = List.map ctr_ (Box.get_vn_list box) in ()
+    in
+    let _ = List.map ctr cs in
+
     ()
   with
   | _ ->

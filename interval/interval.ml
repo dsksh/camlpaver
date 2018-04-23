@@ -1,16 +1,18 @@
 
 type t = { inf: float; sup: float; }
 
-let intv_of_float x = { inf=x; sup=x }
-let intv_of_int x = intv_of_float (float_of_int x)
+let make inf sup = { inf=inf; sup=sup; }
 
-let zero  = { inf=0.; sup=0.; }
-let one   = { inf=1.; sup=1.; }
-let whole = { inf=neg_infinity; sup=infinity; }
-let positive = { inf=0.; sup=infinity; }
-let negative = { inf=neg_infinity; sup=0.; }
+let of_float x = { inf=x; sup=x }
+let of_int x = of_float (float_of_int x)
 
-let empty = { inf=nan; sup=nan; }
+let zero  = of_float 0.
+let one   = of_float 1.
+let whole = make neg_infinity infinity
+let positive = make 0. infinity
+let negative = make neg_infinity 0.
+
+let empty = of_float nan
 let is_empty x = x = empty
 
 type p = float*float
@@ -40,7 +42,7 @@ external intv_str_of: float -> float -> string = "intv_str_of"
 
 (*let%test _ = intv_add 1. 2. 3. 4. = (4.,6.)*)
 
-let t_of_p p = { inf=fst p; sup=snd p; }
+let t_of_p p = make (fst p) (snd p)
 
 let (+$)  x y = t_of_p (intv_add x.inf x.sup y.inf y.sup)
 let (-$)  x y = t_of_p (intv_sub x.inf x.sup y.inf y.sup)
@@ -67,6 +69,13 @@ let asin x = t_of_p (intv_asin x.inf x.sup)
 let acos x = t_of_p (intv_acos x.inf x.sup)
 let atan x = t_of_p (intv_atan x.inf x.sup)
 
+let string_of_intv x = intv_str_of x.inf x.sup
+let print fmt x = Format.fprintf fmt "%s" (string_of_intv x)
+
+(* utility functions *)
+
+let (~-$) x = zero -$ x
+
 let pow_intv x y =
   exp (y *$ (log x))
 
@@ -80,6 +89,37 @@ let join x y =
     let u = max x.sup y.sup in
     { inf=l; sup=u }
 
+let is_superset x y =
+  x.inf <= y.inf && y.sup <= x.sup
+
+let is_strict_superset x y =
+  x.inf < y.inf && y.sup < x.sup
+
+let ext_div x y =
+  if is_strict_superset y zero then
+    if x.inf > 0. then
+      let xl = of_float x.inf in
+      let yl = of_float y.inf in
+      let yu = of_float y.sup in
+      let xl_yl = xl /$ yl in
+      let xl_yu = xl /$ yu in
+      let r1 = make neg_infinity xl_yl.sup in
+      let r2 = make xl_yu.inf infinity in
+      r1, r2
+    else if x.sup < 0. then
+      let xu = of_float x.sup in
+      let yl = of_float y.inf in
+      let yu = of_float y.sup in
+      let xu_yl = xu /$ yl in
+      let xu_yu = xu /$ yu in
+      let r1 = make neg_infinity xu_yl.sup in
+      let r2 = make xu_yu.inf infinity in
+      r1, r2
+    else 
+      whole, empty
+  else
+    x /$ y, empty
+
 let rec root x n =
   if is_empty x then x
   else if x.inf = 0. && x.sup = 0. then
@@ -91,13 +131,22 @@ let rec root x n =
   else if n = 1 then 
     x
   else if n mod 2 = 0 then
-    pow_intv x (one /$ (intv_of_int n))
+    pow_intv x (one /$ (of_int n))
   else
-    join 
-      (pow_intv x (one /$ (intv_of_int n)))
-      (zero -$ (pow_intv (zero -$ x) (one /$ (intv_of_int n))))
+    join (pow_intv x (one /$ (of_int n)))
+      (~-$ (pow_intv (zero -$ x) (one /$ (of_int n))))
 
-let string_of_intv x = intv_str_of x.inf x.sup
+let slice_lower ?eps:(eps=1e-12) x =
+  if is_empty x || width x <= eps then x
+  else
+    let b = (max (-. max_float) x.inf) +. eps in
+    if is_superset x (of_float b) then x
+    else make x.inf b
 
-let print fmt x = Format.fprintf fmt "%s" (string_of_intv x)
+let slice_upper ?eps:(eps=1e-12) x =
+  if is_empty x || width x <= eps then x
+  else
+    let b = (min max_float x.inf) +. eps in
+    if is_superset x (of_float b) then x
+    else make b x.sup
 
