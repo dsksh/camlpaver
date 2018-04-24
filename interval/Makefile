@@ -7,7 +7,7 @@ LIB     = libwrapper.a
 TARGET  = $(LIB)
 
 #CFLAGS = -O3 -g -ansi -pedantic -Wall -frounding-math -fno-fast-math $(INCLUDES)
-CFLAGS  = -O3 -g  -fPIC -I. -stdlib=libc++
+CFLAGS  = -O3 -g -fPIC -I. -stdlib=libc++
 
 CPP     = g++
 MV      = mv

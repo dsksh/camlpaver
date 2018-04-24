@@ -2,8 +2,8 @@ Constants
   c = 5;
 
 Variables
-  x in [-1e+8,  1e+8];
-  y in [-10,  10];
+  x in [-1e+8, 1e+8];
+  y in [-10, 10];
 
 Constraints
   x + c * ( 10 - y ) = 0;

@@ -1,10 +1,14 @@
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 #include <kv/interval.hpp>
+#include <kv/rdouble.hpp>
 
 #include "wrapper.h"
+
+#define OUTPUT_PREC 12
 
 using namespace std;
 using namespace kv;
@@ -65,6 +69,7 @@ DEF_ATTR(kv_norm, norm)
 char *kv_str_of_intv(const double inf, const double sup) {
   interval<double> intv(inf, sup);
   stringstream ss;
+  ss << setprecision(OUTPUT_PREC);
   ss << intv;
   char *cs = new char[ss.str().length()+1];
   std::strcpy (cs, ss.str().c_str());

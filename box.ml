@@ -38,6 +38,14 @@ let make s =
   let v = Array.copy s.iv in
   { s = s; v = v; }
 
+let empty s = 
+  let v = Array.make (Hashtbl.length s.table) Interval.empty in
+  { s = s; v = v; }
+
+let copy t = 
+  let v = Array.copy t.v in
+  { s = t.s; v = v; }
+
 let ind_of t vn =
   Hashtbl.find t.s.table vn
 

@@ -60,3 +60,4 @@ let tail = function
 let eject = function
   | ([x], []) -> ([], [])
   | (f, _::rs) -> checkf (f, rs)
+  | _ -> failwith "ejecting from empty deque"

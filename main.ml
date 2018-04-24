@@ -2,14 +2,17 @@ open Format
 open Lexing
 open Pretty
 
-(* TODO *)
+let usage = "usage: main.exe [options] input.bch"
+
 let spec = [
+  "-e",  Arg.Float (fun e -> Solver.eps := e), 
+  " Set the precision of paving";
 ]
 
 let file = ref "stdin"
 let cin =
   let ofile = ref None in
-  Arg.parse spec (fun s -> ofile := Some s) "usage: ..."; (* TODO *)
+  Arg.parse spec (fun s -> ofile := Some s) usage; 
   match !ofile with
   | Some f -> file := f ; open_in f
   | None -> stdin
@@ -34,9 +37,10 @@ let () =
     let _ = List.map pr cs in
 
     let sols = Solver.solve cs box in
-    let pr sol = printf "%a@.@." Box.print sol in
-    let _ = List.map pr sols in
-    if List.length sols = 0 then printf "no solution@.";
+    if List.length sols = 0 then printf "@.no solution@."
+    else
+      let pr sol = printf "@.%a@." Box.print sol in
+      let _ = List.map pr sols in ();
 
     ()
   with
