@@ -39,7 +39,9 @@ let rec select_bb box ctx =
 
 let contract cs box =
   if not (Box.is_empty box) then
-    let ctr c = Contractor_hull.contract c box in
+    let ctr c = 
+      (Format.printf "%a\n" Pretty.print_constr c;
+      Contractor_hull.contract c box) in
     let _ = List.map ctr cs in 
 
     let ctr c = 
@@ -71,8 +73,9 @@ let solve ?extract:(extract=extract_stack) cs box =
   let rec loop dq =
     if not (Deque.is_empty dq) then
       let (box,ctx), dq = extract dq in
-Format.printf "@.extract: %a@." Box.print box;
+(*Format.printf "@.extract: %a@." Box.print box;*)
       contract cs box;
+(*Format.printf "@.contract: %a %b@." Box.print box (Box.is_empty box);*)
       match select_bb box ctx with
       | None -> 
           if not (Box.is_empty box) then 

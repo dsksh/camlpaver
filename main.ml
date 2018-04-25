@@ -39,8 +39,13 @@ let () =
     let sols = Solver.solve cs box in
     if List.length sols = 0 then printf "@.no solution@."
     else
-      let pr sol = printf "@.%a@." Box.print sol in
+      let f = ref true in
+      let pr sol = 
+        if !f then f := false else printf ",@]@;@.";
+        printf "@[<2>%a" Pretty_mathematica.print_box sol in
+      printf "{@.";
       let _ = List.map pr sols in ();
+      printf "@.}@.";
 
     ()
   with

@@ -54,6 +54,7 @@ let shrink is_lower t =
   let rec loop () =
     let v1 = Box.get t.box t.vn in
     let bnd = of_float (if is_lower then v0.sup else v0.inf) in
+(*printf "\n";*)
     Contractor_newton.contract ~sample_fun:sf t.fn t.vn t.box;
 
     if is_consistent is_lower t then
@@ -87,7 +88,7 @@ let contract t =
     if not (is_consistent true t) then
       shrink true t;
 
-printf "after sl: %a\n" Box.print t.box;
+(*printf "after sl: %a@." Box.print t.box;*)
 
     if is_empty (Box.get t.box t.vn) then NoSol
 
@@ -98,7 +99,7 @@ printf "after sl: %a\n" Box.print t.box;
       if not (is_consistent false t) then
         shrink false t;
 
-printf "after su: %a\n" Box.print t.box;
+(*printf "after su: %a@." Box.print t.box;*)
 
       check_consistency t
     end

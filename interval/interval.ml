@@ -13,7 +13,8 @@ let positive = make 0. infinity
 let negative = make neg_infinity 0.
 
 let empty = of_float nan
-let is_empty x = x == empty
+let is_nan f = f <> f
+let is_empty x = (is_nan x.inf && is_nan x.sup)
 
 type p = float*float
 

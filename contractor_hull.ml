@@ -87,28 +87,28 @@ let rec bwd_propag at expr box =
 
   | App2 (Oadd,e1,e2) ->
       set e1 ((bwd expr) -$ (fwd e2));
-printf "bwd_add: %a := %a - %a\n" Interval.print (bwd e1) Interval.print (bwd expr) Interval.print (bwd e2);
+(*printf "bwd add l: %a = %a - %a\n" Interval.print (bwd e1) Interval.print (bwd expr) Interval.print (fwd e2);*)
       rc e1;
       set e2 ((bwd expr) -$ (bwd e1));
-printf "bwd_add: %a := %a - %a\n" Interval.print (bwd e2) Interval.print (bwd expr) Interval.print (bwd e1);
+(*printf "bwd add r: %a = %a - %a\n" Interval.print (bwd e2) Interval.print (bwd expr) Interval.print (fwd e1);*)
       rc e2
 
   | App2 (Osub,e1,e2) ->
       set e1 ((bwd expr) +$ (fwd e2));
-printf "bwd_sub: %a := %a + %a\n" Interval.print (bwd e1) Interval.print (bwd expr) Interval.print (bwd e2);
       rc e1;
       set e2 ((bwd e1) -$ (bwd expr));
-printf "bwd_sub: %a := %a - %a\n" Interval.print (bwd e2) Interval.print (bwd e1) Interval.print (bwd e2);
       rc e2
 
   | App2 (Omul,e1,e2) ->
-      if not (is_superset (fwd e2) zero) then
+      if not (is_superset (fwd e2) zero) then begin
         set e1 ((bwd expr) /$ (fwd e2));
-printf "bwd_mul: %a := %a / %a\n" Interval.print (bwd e1) Interval.print (bwd expr) Interval.print (fwd e2);
+(*printf "bwd mul l: %a = %a / %a\n" Interval.print (bwd e1) Interval.print (bwd expr) Interval.print (fwd e2);*)
+      end;
       rc e1;
-      if not (is_superset (bwd e1) zero) then
+      if not (is_superset (bwd e1) zero) then begin
         set e2 ((bwd expr) /$ (bwd e1));
-printf "bwd_mul: %a := %a / %a\n" Interval.print (bwd e2) Interval.print (bwd expr) Interval.print (fwd e1);
+(*printf "bwd mul r: %a = %a / %a\n" Interval.print (bwd e2) Interval.print (bwd expr) Interval.print (fwd e1);*)
+      end;
       rc e2
 
   | App2 (Odiv,e1,e2) ->
@@ -129,9 +129,10 @@ let contract constr box =
   let v1 = fwd_eval at box e1 in
   let v2 = fwd_eval at box e2 in
 
-printf "after fwd:@.";
+(*printf "after fwd:@.";
 printf "v1: %a@." Interval.print v1;
 printf "v2: %a@." Interval.print v2;
+*)
 
   (* backward propagation *)
   try
@@ -156,13 +157,14 @@ printf "v2: %a@." Interval.print v2;
         let v = join v2 (of_float infinity) in
         set_bwd at e1 (intersect v1 v);
         bwd_propag at e1 box;
-        let v = join (of_float infinity) v1 in
+        let v = join (of_float neg_infinity) v1 in
         set_bwd at e2 (intersect v2 v);
         bwd_propag at e2 box;
     end;
   
-    printf "after bwd:@.";
-    printf "%a@." Box.print box
+(*printf "after bwd:@.";
+printf "%a@." Box.print box
+*)
 
   with Empty_result -> 
     box.v.(0) <- Interval.empty   

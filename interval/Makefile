@@ -11,7 +11,7 @@ CFLAGS  = -O3 -g -fPIC -I. -stdlib=libc++
 
 CPP     = g++
 MV      = mv
-SED		= sed
+SED     = sed
 AR      = ar
 RANLIB  = ranlib
 RM      = rm
@@ -35,5 +35,5 @@ $(LIB): $(OBJECT)
 
 .c.d .cc.d .cpp.d:
 	$(CXX) $(CFLAGS) -M $< | \
-    $(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: $(MAKE_INC) $(MAKE_CFG) ,' >$@.tmp
+	$(SED) 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: $(MAKE_INC) $(MAKE_CFG) ,' >$@.tmp
 	$(MV) $@.tmp $@
