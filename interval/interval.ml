@@ -105,6 +105,9 @@ let join x y =
     let u = max x.sup y.sup in
     { inf=l; sup=u }
 
+let is_contained x f =
+  x.inf <= f && f <= x.sup
+
 let is_superset x y =
   x.inf <= y.inf && y.sup <= x.sup
 

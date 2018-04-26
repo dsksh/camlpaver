@@ -1,7 +1,7 @@
-
 open Hashcons
 open Model_common
 open Ptree
+open Util
 
 (* hash-consed expression type *)
 
@@ -45,6 +45,11 @@ module Hexpr = Make(Expr_node)
 
 let ht = Hexpr.create 251
 
+let get_ht_size () = 
+  let _,_,sz,_,_,_ = (Hexpr.stats ht) in 
+(*Format.printf "sz: %d\n" sz;*)
+  sz
+
 (* constructors for the expressions *)
 
 let mk_var n = Hexpr.hashcons ht (Var n)
@@ -62,7 +67,7 @@ let mk_app1 op e = match op,e.node with
 let mk_app2 op e1 e2 = match op,e1.node,e2.node with
   | Oadd,Val z,_  when z = Interval.zero -> e2
   | (Oadd|Osub),_,Val z when z = Interval.zero -> e1
-  | Odiv,_,Val z when z.inf <= 0. && 0. <= z.sup -> assert false
+  | Odiv,_,Val z when Interval.is_contained z 0. -> error ZeroDivision
   | Omul,Val z,_ when z = Interval.one -> e2
   | (Omul|Odiv),_,Val z when z = Interval.one -> e1
   | (Omul|Odiv),Val z,_ when z = Interval.zero -> e1
@@ -108,7 +113,7 @@ let rec diff_expr vid expr =
   | App1 (Oatan,e) ->
       (mk_app2 Omul (mk_app2 Odiv (mk_val Interval.one) 
         (mk_app2 Oadd (mk_val Interval.one) (mk_app1 Osqr e)) ) (diff e) )
-  | App1 _ -> assert false
+  | App1 (op,_) -> error (Unsupported (str_of_op1 op))
 
   | App2 (Oadd,e1,e2) ->
       (mk_app2 Oadd (diff e1) (diff e2))

@@ -1,7 +1,9 @@
 
 type t = { mutable last : int; mutable sp : int option; }
 
-let eps = ref 1e-4
+let bfs = ref true
+let eps = ref 1e-2
+let max_n = ref (-1)
 
 let append node dq = 
   Deque.cons node dq
@@ -39,9 +41,7 @@ let rec select_bb box ctx =
 
 let contract cs box =
   if not (Box.is_empty box) then
-    let ctr c = 
-      (Format.printf "%a\n" Pretty.print_constr c;
-      Contractor_hull.contract c box) in
+    let ctr c = Contractor_hull.contract c box in
     let _ = List.map ctr cs in 
 
     let ctr c = 
@@ -65,27 +65,39 @@ let split vn box =
 
 let clone_ctx ctx = { last=ctx.last; sp=ctx.sp; }
 
-let solve ?extract:(extract=extract_stack) cs box =
+let is_empty _n dq = Deque.is_empty dq
+let is_nloops_exceed n dq = is_empty n dq || n > !max_n
+
+let solve 
+  ?is_finished:(is_finished=is_empty)
+  ?extract:(extract=extract_stack) 
+  cs box =
+
   let sols = ref [] in
   let ctx = { last=0; sp=None; } in
   let dq = append (box,ctx) Deque.empty in
 
-  let rec loop dq =
-    if not (Deque.is_empty dq) then
+  let rec loop n dq =
+    if not (is_finished n dq) then
       let (box,ctx), dq = extract dq in
-(*Format.printf "@.extract: %a@." Box.print box;*)
+if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
       contract cs box;
 (*Format.printf "@.contract: %a %b@." Box.print box (Box.is_empty box);*)
       match select_bb box ctx with
       | None -> 
           if not (Box.is_empty box) then 
             sols := box::(!sols);
-          loop dq
+          loop (n+1) dq
       | Some v ->
           let b1,b2 = split v box in
           let dq = append (b1, ctx) dq in
           let dq = append (b2, clone_ctx ctx) dq in
-          loop dq
+          loop (n+1) dq
   in 
-  loop dq;
+  loop 0 dq;
+
+  (* move the boxes left in dq to sols *)
+  let l = Deque.to_list dq in
+  sols := List.append !sols (fst (List.split l));
+
   !sols

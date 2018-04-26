@@ -4,13 +4,17 @@ open Hashcons
 open Expr
 open Model_common
 open Interval
+open Util
 
 exception Empty_result
 
 type attr = { fwd : Interval.t; mutable bwd : Interval.t; }
 
+let get_attr at i = match at.(i) with Some a -> a | None -> assert false
+
 let set_bwd at expr v = 
-  let a = Hashtbl.find at expr.tag in
+  (*let a = Hashtbl.find at expr.tag in*)
+  let a = get_attr at (expr.tag) in
   let v = intersect v a.bwd in
   if v != empty then 
     a.bwd <- v
@@ -19,8 +23,11 @@ let set_bwd at expr v =
 
 
 let rec fwd_eval at box expr = 
-  try let a = Hashtbl.find at expr.tag in a.fwd
-  with Not_found ->
+  (*try let a = Hashtbl.find at expr.tag in a.fwd
+  with Not_found ->*)
+  match at.(expr.tag) with 
+  | Some _ -> assert false
+  | None ->
     let rc e = fwd_eval at box e in
   
     let v = match expr.node with
@@ -47,14 +54,17 @@ let rec fwd_eval at box expr =
         v
     in 
     let a = { fwd=v; bwd=v; } in
-    Hashtbl.add at expr.tag a; 
+    (*Hashtbl.add at expr.tag a;*)
+    at.(expr.tag) <- Some a;
     v
 
 let rec bwd_propag at expr box =
   let rc e = bwd_propag at e box in
 
-  let fwd e = (Hashtbl.find at e.tag).fwd in
-  let bwd e = (Hashtbl.find at e.tag).bwd in
+  (*let fwd e = (Hashtbl.find at e.tag).fwd in
+  let bwd e = (Hashtbl.find at e.tag).bwd in*)
+  let fwd e = (get_attr at (e.tag)).fwd in
+  let bwd e = (get_attr at (e.tag)).bwd in
   let set e v = set_bwd at e v in
 
   match expr.node with
@@ -74,6 +84,8 @@ let rec bwd_propag at expr box =
       else 
         set e (bwd *$ bwd);
       rc e
+
+  | App1 (op,_) -> error (Unsupported (Model_common.str_of_op1 op))
 
   | Pow (n,e) ->
       let p = root (bwd expr) n in
@@ -118,11 +130,10 @@ let rec bwd_propag at expr box =
         set e2 ((bwd e1) /$ (bwd expr));
       rc e2
 
-  | _ -> assert false (* TODO *)
-
 
 let contract constr box =
-  let at = Hashtbl.create 251 in (* TODO: overlap should be taken care? *)
+  (*let at = Hashtbl.create 251 in (* TODO: overlap should be taken care? *)*)
+  let at = Array.make (get_ht_size ()) None in
   let op, (e1,_), (e2,_) = constr in
 
   (* forward propagation *)
