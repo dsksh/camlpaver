@@ -2,6 +2,7 @@ open Format
 open Ptree
 open Model_common
 open Expr
+open Constr
 open Hashcons
 
 (* printers for Ptree *)
@@ -49,7 +50,18 @@ let print_dual fmt = function
       let _ = List.map pr ds in
       fprintf fmt "}@]@,@]"
 
-let print_constr fmt constr = 
-  let op, e1, e2 = constr in
-  fprintf fmt "%a@;%s@;%a" print_dual e1 (str_of_rop op) print_dual e2
+(* for Constr *)
 
+let rec print_constr fmt constr = 
+  let pr_list fmt cs =
+    let f = ref true in
+    let pr c = if !f then f := false else fprintf fmt ",@;"; 
+      print_constr fmt c in
+    let _ = List.map pr cs in ()
+  in
+  match constr.node with
+  | C (op,e1,e2) -> fprintf fmt "@[%a@;%s@;%a@]"
+      print_expr (fst e1) (str_of_rop op) print_expr (fst e2)
+  | G (c1,c2) -> fprintf fmt "(%a ==> %a)" print_constr c1 print_constr c2
+  | L cs -> 
+      fprintf fmt "[%a]" pr_list cs

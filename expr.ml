@@ -5,21 +5,23 @@ open Util
 
 (* hash-consed expression type *)
 
-type expr = expr_node hash_consed
-and  expr_node =
+type t = node hash_consed
+and  node =
   | Var of ident
   | Val of Interval.t
-  | App1 of un_op * expr
-  | App2 of bin_op * expr * expr
-  | Pow of int * expr
+  | App1 of un_op * t
+  | App2 of bin_op * t * t
+  | Pow of int * t
+
+type dual = t * t list
 
 module Expr_node = struct
-  type t = expr_node
+  type t = node
 
-  let rec equal e1 e2 = 
+  let equal e1 e2 = 
     match e1, e2 with
     | Var n1, Var n2 -> n1 == n2
-    | Val v1, Val v2 -> v1 == v2
+    | Val v1, Val v2 -> v1 = v2
     | App1 (op1,e1), App1 (op2,e2) -> op1 == op2 && e1 == e2
     | App2 (op1,e1,f1), App2 (op2,e2,f2) -> op1 == op2 && e1 == e2 && f1 == f2
     | Pow (i1,e1), Pow (i2,e2) -> i1 == i2 && e1 == e2
@@ -47,8 +49,11 @@ let ht = Hexpr.create 251
 
 let get_ht_size () = 
   let _,_,sz,_,_,_ = (Hexpr.stats ht) in 
-(*Format.printf "sz: %d\n" sz;*)
   sz
+
+let get_max_tag () =
+  let e = Hexpr.hashcons ht (Val Interval.empty) in
+  e.tag
 
 (* constructors for the expressions *)
 
@@ -90,9 +95,9 @@ let rec mk_expr = function
 
 (* constructors for the derivatives *)
 
-let rec diff_expr vid expr =
+let rec diff_expr vid t =
   let diff = diff_expr vid in
-  match expr.node with
+  match t.node with
   | Var id -> if id = vid then mk_val Interval.one else mk_val Interval.zero
   | Val _ -> mk_val Interval.zero
 
@@ -147,8 +152,8 @@ let mk_diff_expr vs (e1,_) (e2,_) =
 
 (* evaluation *)
 
-let rec eval box expr = 
-  match expr.node with
+let rec eval box t = 
+  match t.node with
   | Var n -> Box.get box n
   | Val v -> v
   | App1 (op,e) -> 
@@ -161,12 +166,3 @@ let rec eval box expr =
   | Pow (n,e) ->
       let v = eval box e in
       Interval.pow v n
-
-(* *)
-
-let mk_constr vs = function
-  | _, (op,e1,e2) -> 
-      let e1 = mk_dual_expr vs e1 in
-      let e2 = mk_dual_expr vs e2 in
-      (op, e1, e2)
-

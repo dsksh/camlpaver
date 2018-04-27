@@ -1,3 +1,5 @@
+open Constr
+open Hashcons
 
 type t = { mutable last : int; mutable sp : int option; }
 
@@ -39,20 +41,18 @@ let rec select_bb box ctx =
     end
   end
 
-let contract cs box =
+let rec contract c box =
   if not (Box.is_empty box) then
-    let ctr c = Contractor_hull.contract c box in
-    let _ = List.map ctr cs in 
-
-    let ctr c = 
-      let ctr_ vn =
-        let t = Contractor_box.init c vn box in
-        Contractor_box.contract t in
-      let _ = List.map ctr_ (Box.get_vn_list box) in ()
-    in
-    let _ = List.map ctr cs in 
-
-    ()
+    match c.node with
+    | C (op,e1,e2) -> 
+        let c = (op,e1,e2) in
+        Contractor_hull.contract c box;
+        let ctr_ vn =
+          let t = Contractor_box.init c vn box in
+          Contractor_box.contract t in
+        let _ = List.map ctr_ (Box.get_vn_list box) in ()
+    | L cs -> let _ = List.map contract cs in ()
+    | _ -> assert false
 
 let split vn box =
   let v0 = Box.get box vn in
@@ -80,21 +80,23 @@ let solve
   let rec loop n dq =
     if not (is_finished n dq) then
       let (box,ctx), dq = extract dq in
-if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
+if !Util.debug then Format.printf "@.extract:  %a@." Box.print box;
       contract cs box;
-(*Format.printf "@.contract: %a %b@." Box.print box (Box.is_empty box);*)
+(*if !Util.debug then Format.printf "contract: %a@." Box.print box;*)
       match select_bb box ctx with
       | None -> 
-          if not (Box.is_empty box) then 
-            sols := box::(!sols);
-          loop (n+1) dq
+          ((if not (Box.is_empty box) then 
+            sols := box::(!sols));
+          loop (n+1) dq)
       | Some v ->
           let b1,b2 = split v box in
           let dq = append (b1, ctx) dq in
           let dq = append (b2, clone_ctx ctx) dq in
           loop (n+1) dq
+
+    else dq 
   in 
-  loop 0 dq;
+  let dq = loop 0 dq in
 
   (* move the boxes left in dq to sols *)
   let l = Deque.to_list dq in

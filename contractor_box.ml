@@ -4,7 +4,7 @@ open Model_common
 open Interval
 
 type t = {
-  fn : Expr.expr * Expr.expr list;
+  fn : Expr.t * Expr.t list;
   vn : string;
   box : Box.t;
   proj : Interval.t;

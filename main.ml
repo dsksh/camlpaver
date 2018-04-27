@@ -49,10 +49,10 @@ let () =
     end;
 
     let vs = sc.vn_list in
-    let cs = List.map (Expr.mk_constr vs) cs in
+    let cs = List.map (fun c -> Constr.make vs c) cs in
+    let cs = Constr.mk_list cs in
     if !Util.debug then begin
-      let pr c = printf "%a;@.@." print_constr c in
-      let _ = List.map pr cs in ()
+      let _ = printf "%a;@.@." print_constr cs in ()
     end;
 
     (* solve *)

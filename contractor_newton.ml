@@ -41,5 +41,5 @@ let contract ?sample_fun:(sf=sample_mp) fn vn box =
     if n > 0 && distance (Box.get box vn) old > 1e-14 && not (Box.is_empty box) then
       loop (n-1)
   in
-  loop 10000
+  loop 100
 

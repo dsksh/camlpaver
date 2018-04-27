@@ -10,7 +10,7 @@ exception Empty_result
 
 type attr = { fwd : Interval.t; mutable bwd : Interval.t; }
 
-let get_attr at i = match at.(i) with Some a -> a | None -> assert false
+let get_attr at i = match at.(i) with Some a -> a | None -> error Unexpected
 
 let set_bwd at expr v = 
   (*let a = Hashtbl.find at expr.tag in*)
@@ -26,7 +26,7 @@ let rec fwd_eval at box expr =
   (*try let a = Hashtbl.find at expr.tag in a.fwd
   with Not_found ->*)
   match at.(expr.tag) with 
-  | Some _ -> assert false
+  | Some _ -> error Unexpected
   | None ->
     let rc e = fwd_eval at box e in
   
@@ -133,7 +133,7 @@ let rec bwd_propag at expr box =
 
 let contract constr box =
   (*let at = Hashtbl.create 251 in (* TODO: overlap should be taken care? *)*)
-  let at = Array.make (get_ht_size ()) None in
+  let at = Array.make (get_max_tag ()) None in
   let op, (e1,_), (e2,_) = constr in
 
   (* forward propagation *)
