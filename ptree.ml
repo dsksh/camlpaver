@@ -16,4 +16,7 @@ and  expr_node =
   | Ppow of int * expr
 
 type constr = loc * constr_node
-and  constr_node = rel_op * expr * expr
+and  constr_node = 
+  | Prel of rel_op * expr * expr
+  | Pif of constr list * constr list
+  | PifElse of constr list * constr list * constr list

@@ -1,5 +1,6 @@
 open Constr
 open Hashcons
+open Contractor
 
 type t = { mutable last : int; mutable sp : int option; }
 
@@ -42,16 +43,36 @@ let rec select_bb box ctx =
   end
 
 let rec contract c box =
-  if not (Box.is_empty box) then
+(*Format.printf "contract: %a\n" Pretty.print_constr c;*)
+  if Box.is_empty box then NoSol
+  else
     match c.node with
     | C (op,e1,e2) -> 
-        let c = (op,e1,e2) in
-        Contractor_hull.contract c box;
+        let t = Contractor.init (op,e1,e2) box in
+
+        (* apply HC4 *)
+        let r = Contractor_hull.contract t in
+
+        (* apply BC3 *)
         let ctr_ vn =
-          let t = Contractor_box.init c vn box in
+          Contractor.set_var t vn;
           Contractor_box.contract t in
-        let _ = List.map ctr_ (Box.get_vn_list box) in ()
-    | L cs -> let _ = List.map contract cs in ()
+        let _ = List.map ctr_ (Box.get_vn_list box) in
+
+        r
+    | P (c1,c2) -> 
+        let r1 = contract c1 box in
+        if r1 <> NoSol then
+
+          let r2 = contract c2 box in
+
+          (* merge the results *)
+          if r2 <> NoSol then
+            if r1 = Proved && r2 = Proved then Proved
+            else Unknown
+          else NoSol
+
+        else NoSol
     | _ -> assert false
 
 let split vn box =
@@ -75,31 +96,34 @@ let solve
 
   let sols = ref [] in
   let ctx = { last=0; sp=None; } in
-  let dq = append (box,ctx) Deque.empty in
+  let dq = append ((cs,ctx),box) Deque.empty in
 
   let rec loop n dq =
-    if not (is_finished n dq) then
-      let (box,ctx), dq = extract dq in
+    if is_finished n dq then dq
+    else
+      let ((cs,ctx),box), dq = extract dq in
 if !Util.debug then Format.printf "@.extract:  %a@." Box.print box;
-      contract cs box;
+      let r = contract cs box in
 (*if !Util.debug then Format.printf "contract: %a@." Box.print box;*)
-      match select_bb box ctx with
-      | None -> 
-          ((if not (Box.is_empty box) then 
-            sols := box::(!sols));
-          loop (n+1) dq)
-      | Some v ->
+      let dq = match r, select_bb box ctx with
+      | Proved, _ -> 
+          sols := box::(!sols);
+          dq
+      | _, None -> 
+          if not (Box.is_empty box) then 
+            sols := box::(!sols);
+          dq
+      | _, Some v ->
           let b1,b2 = split v box in
-          let dq = append (b1, ctx) dq in
-          let dq = append (b2, clone_ctx ctx) dq in
-          loop (n+1) dq
-
-    else dq 
+          let dq = append ((cs, ctx), b1) dq in
+          let dq = append ((cs, clone_ctx ctx), b2) dq in dq
+      in
+      loop (n+1) dq
   in 
   let dq = loop 0 dq in
 
   (* move the boxes left in dq to sols *)
   let l = Deque.to_list dq in
-  sols := List.append !sols (fst (List.split l));
+  sols := List.append !sols (snd (List.split l));
 
   !sols

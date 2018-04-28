@@ -7,7 +7,11 @@
   let id_or_keyword = 
     let h = Hashtbl.create 2 in
     List.iter (fun (s,k) -> Hashtbl.add h s k)
-	[ "sqrt", SQRT;
+	[ "if", IF;
+	  "then", THEN;
+	  "else", ELSE;
+
+	  "sqrt", SQRT;
 	  "exp", EXP;
 	  "log", LOG;
 	  "sin", SIN;

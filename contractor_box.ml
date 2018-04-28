@@ -1,28 +1,9 @@
-
 open Format
+open Contractor
 open Model_common
 open Interval
 
-type t = {
-  fn : Expr.t * Expr.t list;
-  vn : string;
-  box : Box.t;
-  proj : Interval.t;
-}
-
-let init constr vn box =
-  let op,e1,e2 = constr in
-  let fn = Expr.mk_diff_expr (Box.get_vn_list box) e1 e2 in
-  let proj = match op with
-  | Oeq -> zero
-  | Olt | Ole -> negative
-  | Ogt | Oge -> positive
-  in
-  { fn=fn; vn=vn; box=box; proj=proj; }
-
-let the_f t = fst t.fn
-
-type r = NoSol | Proved | Unknown
+let the_f t = fst t.lhs
 
 let check_consistency t =
   let v = intersect (Expr.eval t.box (the_f t)) t.proj in
@@ -55,7 +36,7 @@ let shrink is_lower t =
     let v1 = Box.get t.box t.vn in
     let bnd = of_float (if is_lower then v0.sup else v0.inf) in
 (*printf "\n";*)
-    Contractor_newton.contract ~sample_fun:sf t.fn t.vn t.box;
+    Contractor_newton.contract ~sample_fun:sf t.lhs t.vn t.box;
 
     if is_consistent is_lower t then
       (* restore the (other) bound *)

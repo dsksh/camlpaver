@@ -50,6 +50,10 @@
 %token COM
 %token SCOL
 
+%token IF 
+%token THEN
+%token ELSE 
+
 /* formula expression tokens */
 
 %token EQ
@@ -149,12 +153,21 @@ constrs :
   |                         { [] }
   ;
 
+constr_l :
+  | constr                  { [$1] }
+  | LP constr COM constr_l  { $2::$4 }
+  ;
+
 constr :
-  | expr EQ expr            { loc (), (Oeq,$1,$3) }
-  | expr LT expr            { loc (), (Olt,$1,$3) }
-  | expr LE expr            { loc (), (Ole,$1,$3) }
-  | expr GT expr            { loc (), (Ogt,$1,$3) }
-  | expr GE expr            { loc (), (Oge,$1,$3) }
+  | expr EQ expr            { loc (), Prel (Oeq,$1,$3) }
+  | expr LT expr            { loc (), Prel (Olt,$1,$3) }
+  | expr LE expr            { loc (), Prel (Ole,$1,$3) }
+  | expr GT expr            { loc (), Prel (Ogt,$1,$3) }
+  | expr GE expr            { loc (), Prel (Oge,$1,$3) }
+  | IF constr_l THEN constr_l 
+                            { loc (), Pif ($2,$4) }
+  | IF constr_l THEN constr_l ELSE constr_l
+                            { loc (), PifElse ($2,$4,$6) }
   ;
 
 /**/

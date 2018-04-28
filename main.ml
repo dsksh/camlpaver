@@ -44,7 +44,7 @@ let () =
     if !Util.debug then printf "%a@.@." Box.print box;
 
     if !Util.debug then begin
-      let pr c = printf "%a;@.@." print_ptree c in
+      let pr c = printf "%a;@.@." print_pconstr c in
       let _ = List.map pr cs in () 
     end;
 

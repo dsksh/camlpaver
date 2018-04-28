@@ -1,5 +1,6 @@
 open Format
 open Array
+open Contractor
 open Hashcons
 open Expr
 open Model_common
@@ -13,7 +14,6 @@ type attr = { fwd : Interval.t; mutable bwd : Interval.t; }
 let get_attr at i = match at.(i) with Some a -> a | None -> error Unexpected
 
 let set_bwd at expr v = 
-  (*let a = Hashtbl.find at expr.tag in*)
   let a = get_attr at (expr.tag) in
   let v = intersect v a.bwd in
   if v != empty then 
@@ -23,8 +23,6 @@ let set_bwd at expr v =
 
 
 let rec fwd_eval at box expr = 
-  (*try let a = Hashtbl.find at expr.tag in a.fwd
-  with Not_found ->*)
   match at.(expr.tag) with 
   | Some _ -> error Unexpected
   | None ->
@@ -32,7 +30,6 @@ let rec fwd_eval at box expr =
   
     let v = match expr.node with
     | Var n -> 
-(*printf "  Var %s: %a\n" n Interval.print box.v.(Hashtbl.find box.s.table n);*)
         Box.get box n
   
     | Val v -> v
@@ -54,15 +51,12 @@ let rec fwd_eval at box expr =
         v
     in 
     let a = { fwd=v; bwd=v; } in
-    (*Hashtbl.add at expr.tag a;*)
     at.(expr.tag) <- Some a;
     v
 
 let rec bwd_propag at expr box =
   let rc e = bwd_propag at e box in
 
-  (*let fwd e = (Hashtbl.find at e.tag).fwd in
-  let bwd e = (Hashtbl.find at e.tag).bwd in*)
   let fwd e = (get_attr at (e.tag)).fwd in
   let bwd e = (get_attr at (e.tag)).bwd in
   let set e v = set_bwd at e v in
@@ -131,51 +125,84 @@ let rec bwd_propag at expr box =
       rc e2
 
 
-let contract constr box =
-  (*let at = Hashtbl.create 251 in (* TODO: overlap should be taken care? *)*)
+let contract t =
+  (*let op, (e1,_), (e2,_) = constr in*)
+
+  let lhs = fst t.lhs in
+
   let at = Array.make (get_max_tag ()) None in
-  let op, (e1,_), (e2,_) = constr in
 
   (* forward propagation *)
-  let v1 = fwd_eval at box e1 in
-  let v2 = fwd_eval at box e2 in
+  let v = fwd_eval at t.box lhs in
 
 (*printf "after fwd:@.";
-printf "v1: %a@." Interval.print v1;
-printf "v2: %a@." Interval.print v2;
-*)
+printf "v: %a@." Interval.print v; *)
 
-  (* backward propagation *)
-  try
-    begin match op with
+  if is_strict_superset t.proj v then Proved
+  else begin
+
+    (* backward propagation *)
+    try
+      let v = Interval.intersect t.proj v in
+      if v <> empty then begin
+        set_bwd at lhs v;
+        bwd_propag at lhs t.box
+      end else
+        raise Empty_result;
+
+    (*begin match op with
     | Oeq ->
-        let v = Interval.intersect v1 v2 in
-        if v <> empty then
-        set_bwd at e1 v;
-        bwd_propag at e1 box;
-        set_bwd at e2 v;
-        bwd_propag at e2 box
+        (*let v = Interval.intersect v1 v2 in
+        if v <> empty then begin
+          set_bwd at e1 v;
+          bwd_propag at e1 box;
+          set_bwd at e2 v;
+          bwd_propag at e2 box
+        end *)
+        let v = Interval.intersect v1 Interval.zero in
+        if v <> empty then begin
+          set_bwd at e1 v;
+          bwd_propag at e1 box
+        end else
+          box.v.(0) <- empty
     | Olt
     | Ole ->
-        let v = join (of_float neg_infinity) v2 in
+        (*let v = join (of_float neg_infinity) v2 in
         set_bwd at e1 (intersect v1 v);
         bwd_propag at e1 box;
         let v = join v1 (of_float infinity) in
         set_bwd at e2 (intersect v2 v);
-        bwd_propag at e2 box
+        bwd_propag at e2 box *)
+        let v = Interval.intersect v1 Interval.negative in
+        if v <> empty then begin
+          set_bwd at e1 v;
+          bwd_propag at e1 box
+        end else
+          box.v.(0) <- empty
     | Ogt
     | Oge ->
-        let v = join v2 (of_float infinity) in
+        (*let v = join v2 (of_float infinity) in
         set_bwd at e1 (intersect v1 v);
         bwd_propag at e1 box;
         let v = join (of_float neg_infinity) v1 in
         set_bwd at e2 (intersect v2 v);
-        bwd_propag at e2 box;
+        bwd_propag at e2 box; *)
+        let v = Interval.intersect v1 Interval.positive in
+        if v <> empty then begin
+          set_bwd at e1 v;
+          bwd_propag at e1 box
+        end else
+          box.v.(0) <- empty
     end;
+    *)
   
 (*printf "after bwd:@.";
-printf "%a@." Box.print box
-*)
+printf "%a@." Box.print t.box; *)
+
+    Unknown
 
   with Empty_result -> 
-    box.v.(0) <- Interval.empty   
+    t.box.v.(0) <- Interval.empty;
+    NoSol
+
+  end

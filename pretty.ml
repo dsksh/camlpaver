@@ -21,9 +21,25 @@ let rec print_pexpr fmt = function
   | _, Ppow (n,e) ->
       fprintf fmt "%a^%d" print_pexpr e n
 
-let print_ptree fmt constr = 
-  let _, (op, e1, e2) = constr in
-    fprintf fmt "%a %s %a" print_pexpr e1 (str_of_rop op) print_pexpr e2
+let rec print_pconstr fmt = function
+  | _, Prel (op,e1,e2) ->
+      fprintf fmt "%a %s %a" print_pexpr e1 (str_of_rop op) print_pexpr e2
+  | _, Pif (c1,c2) ->
+      let pr c = print_pconstr fmt c in
+      fprintf fmt "@[if (";
+      let _ = List.map pr c1 in
+      fprintf fmt ")@;then (";
+      let _ = List.map pr c2 in
+      fprintf fmt ")@]"
+  | _, PifElse (c1,c2,c3) ->
+      let pr c = print_pconstr fmt c in
+      fprintf fmt "@[if (";
+      let _ = List.map pr c1 in
+      fprintf fmt ")@;then (";
+      let _ = List.map pr c2 in
+      fprintf fmt ")@;else (";
+      let _ = List.map pr c3 in
+      fprintf fmt ")@]"
 
 
 (* printers for Expr *)
@@ -53,15 +69,10 @@ let print_dual fmt = function
 (* for Constr *)
 
 let rec print_constr fmt constr = 
-  let pr_list fmt cs =
-    let f = ref true in
-    let pr c = if !f then f := false else fprintf fmt ",@;"; 
-      print_constr fmt c in
-    let _ = List.map pr cs in ()
-  in
   match constr.node with
   | C (op,e1,e2) -> fprintf fmt "@[%a@;%s@;%a@]"
       print_expr (fst e1) (str_of_rop op) print_expr (fst e2)
   | G (c1,c2) -> fprintf fmt "(%a ==> %a)" print_constr c1 print_constr c2
-  | L cs -> 
-      fprintf fmt "[%a]" pr_list cs
+  | P (c1,c2) -> 
+      fprintf fmt "(%a,@,%a)" print_constr c1 print_constr c2
+  | True -> fprintf fmt "true"
