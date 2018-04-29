@@ -7,7 +7,7 @@ type un_op = Osqr | Osqrt | Oexp | Olog | Osin | Ocos | Otan | Oasin | Oacos | O
 
 type bin_op = Oadd | Osub | Omul | Odiv
 
-type rel_op = Oeq | Olt | Ole | Ogt | Oge
+type rel_op = Oeq | One | Olt | Ole | Ogt | Oge
 
 let str_of_op1 = function
   | Osqr -> "sqr"
@@ -29,6 +29,7 @@ let str_of_op2 = function
 
 let str_of_rop = function
   | Oeq -> "="
+  | One -> "!="
   | Olt -> "<"
   | Ole -> "<="
   | Ogt -> ">" 
@@ -52,3 +53,10 @@ let impl_of_op2 = function
   | Omul -> Interval.( *$)
   | Odiv -> Interval.(/$)
 
+let negate_rop = function
+  | Oeq -> One
+  | One -> Oeq
+  | Olt -> Oge
+  | Ole -> Ogt
+  | Ogt -> Ole
+  | Oge -> Olt 

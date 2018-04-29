@@ -46,8 +46,8 @@ let rec make vs = function
   | _, Pif (c1,c2) ->
       let c1 = List.map (fun c -> make vs c) c1 in
       let c2 = List.map (fun c -> make vs c) c2 in
-      let c1 = mk_list c1 in
-      let c2 = mk_list c2 in
+      let c1 = if List.length c1 = 1 then List.hd c1 else mk_list c1 in
+      let c2 = if List.length c2 = 1 then List.hd c2 else mk_list c2 in
       Hconstr.hashcons ht (G (c1,c2))
   | _, PifElse _ -> 
       error (Unsupported "if-then-else")

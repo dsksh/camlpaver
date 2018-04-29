@@ -6,11 +6,13 @@ open Interval
 let the_f t = fst t.lhs
 
 let check_consistency t =
-  let v = intersect (Expr.eval t.box (the_f t)) t.proj in
-  if is_empty v then NoSol
-  else if width v = 0. then Proved
-  else if is_superset v zero then Proved
-  else Unknown
+  let v = Expr.eval t.box (the_f t) in
+  if is_strict_superset t.proj v then Proved
+  else if t.proj = zero && width v = 0. then Proved
+  else
+    let v = intersect v t.proj in
+    if is_empty v then NoSol
+    else Unknown
 
 let is_consistent is_lower t =
   let v0 = Box.get t.box t.vn in
@@ -23,7 +25,7 @@ let is_consistent is_lower t =
 
     (* restrore *)
     Box.set t.box t.vn v0;
-    res = Proved
+    res <> NoSol
 
 let shrink is_lower t =
   let v0 = Box.get t.box t.vn in
@@ -74,8 +76,6 @@ let contract t =
     if is_empty (Box.get t.box t.vn) then NoSol
 
     else begin 
-      (*let lb = (Box.get t.box t.vn).inf in*)
-  
       (* shrink the upper bound *)
       if not (is_consistent false t) then
         shrink false t;

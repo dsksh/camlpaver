@@ -43,23 +43,20 @@ let rec select_bb box ctx =
   end
 
 let rec contract c box =
-(*Format.printf "contract: %a\n" Pretty.print_constr c;*)
+(*Format.printf "contract: %a@." Pretty.print_constr c;*)
   if Box.is_empty box then NoSol
   else
     match c.node with
     | C (op,e1,e2) -> 
         let t = Contractor.init (op,e1,e2) box in
+        apply_contractors t
 
-        (* apply HC4 *)
-        let r = Contractor_hull.contract t in
+    | G (ac,tc) ->
+        if check_entailment box ac then
+          contract tc box
+        else
+          Unknown
 
-        (* apply BC3 *)
-        let ctr_ vn =
-          Contractor.set_var t vn;
-          Contractor_box.contract t in
-        let _ = List.map ctr_ (Box.get_vn_list box) in
-
-        r
     | P (c1,c2) -> 
         let r1 = contract c1 box in
         if r1 <> NoSol then
@@ -73,7 +70,42 @@ let rec contract c box =
           else NoSol
 
         else NoSol
-    | _ -> assert false
+
+    | True -> Proved
+
+and check_entailment box c =
+  match c.node with
+  | C (op,e1,e2) ->
+      let b = Box.copy box in
+      (* negation of the ask constraint *)
+      let t = Contractor.init (Model_common.negate_rop op,e1,e2) b in
+      let r = apply_contractors t in
+      (* empty result implies the entailment *)
+      r = NoSol
+
+  | P (c1,c2) -> 
+      (* all the ask constraints should be entailed *)
+      if check_entailment box c1 then 
+        check_entailment box c2
+      else
+        false
+
+  | _ -> assert false
+
+and apply_contractors t =
+  (* apply HC4 *)
+  let r = Contractor_hull.contract t in
+
+  (* apply BC3 *)
+  let ctr r vn =
+    if r == NoSol || r == Proved then r
+    else (* Unknown *) begin 
+      Contractor.set_var t vn;
+      Contractor_box.contract t
+    end in
+  let r = List.fold_left ctr r (Box.get_vn_list t.box) in
+
+  r
 
 let split vn box =
   let v0 = Box.get box vn in
@@ -100,11 +132,11 @@ let solve
 
   let rec loop n dq =
     if is_finished n dq then dq
-    else
+    else begin
       let ((cs,ctx),box), dq = extract dq in
-if !Util.debug then Format.printf "@.extract:  %a@." Box.print box;
+if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
       let r = contract cs box in
-(*if !Util.debug then Format.printf "contract: %a@." Box.print box;*)
+(*if !Util.debug then Format.printf "contracted: %a@." Box.print box;*)
       let dq = match r, select_bb box ctx with
       | Proved, _ -> 
           sols := box::(!sols);
@@ -119,6 +151,7 @@ if !Util.debug then Format.printf "@.extract:  %a@." Box.print box;
           let dq = append ((cs, clone_ctx ctx), b2) dq in dq
       in
       loop (n+1) dq
+    end
   in 
   let dq = loop 0 dq in
 
