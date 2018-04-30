@@ -52,9 +52,15 @@ let rec contract c box =
         apply_contractors t
 
     | G (ac,tc) ->
-        if check_entailment box ac then
+        let r = check_entailment box ac in
+        if r = Proved then
           contract tc box
+        else if r = NoSol then
+          (* current box certainly not entail the ask constraint,
+           * so don't need to process the body *)
+          Proved
         else
+          (* suspension *)
           Unknown
 
     | P (c1,c2) -> 
@@ -81,31 +87,44 @@ and check_entailment box c =
       let t = Contractor.init (Model_common.negate_rop op,e1,e2) b in
       let r = apply_contractors t in
       (* empty result implies the entailment *)
-      r = NoSol
+      if r = NoSol then Proved
+      else
+        (* check if the ask constraint is certainly not entailed *)
+        let b = Box.copy box in
+        (* set the ask constraint *)
+        let t = Contractor.init (op,e1,e2) b in
+        apply_contractors t (* return NoSol or Unknown *)
 
   | P (c1,c2) -> 
-      (* all the ask constraints should be entailed *)
-      if check_entailment box c1 then 
-        check_entailment box c2
+      let r1 = check_entailment box c1 in
+      (* first ask constraint is certainly not entailed *)
+      if r1 = NoSol then NoSol
       else
-        false
+        let r2 = check_entailment box c2 in
+        (* second ask constraint is certainly not entailed *)
+        if r2 = NoSol then NoSol
+        else if r1 = Proved && r2 = Proved then 
+          (* both of the ask constraints are entailed *)
+          Proved
+        else Unknown
 
   | _ -> assert false
 
 and apply_contractors t =
   (* apply HC4 *)
   let r = Contractor_hull.contract t in
+  if r == NoSol || r == Proved then r
+  else
 
-  (* apply BC3 *)
-  let ctr r vn =
-    if r == NoSol || r == Proved then r
-    else (* Unknown *) begin 
-      Contractor.set_var t vn;
-      Contractor_box.contract t
-    end in
-  let r = List.fold_left ctr r (Box.get_vn_list t.box) in
+    (* apply BC3 *)
+    let ctr r vn =
+      if r == NoSol || r == Proved then r
+      else (* Unknown *) begin 
+        Contractor.set_var t vn;
+        Contractor_box.contract t
+      end in
+    List.fold_left ctr r (Box.get_vn_list t.box)
 
-  r
 
 let split vn box =
   let v0 = Box.get box vn in
@@ -119,7 +138,7 @@ let split vn box =
 let clone_ctx ctx = { last=ctx.last; sp=ctx.sp; }
 
 let is_empty _n dq = Deque.is_empty dq
-let is_nloops_exceed n dq = is_empty n dq || n > !max_n
+let is_nloops_exceeded n dq = is_empty n dq || n > !max_n
 
 let solve 
   ?is_finished:(is_finished=is_empty)

@@ -10,6 +10,7 @@
 	[ "if", IF;
 	  "then", THEN;
 	  "else", ELSE;
+	  "fi", ENDIF;
 
 	  "sqrt", SQRT;
 	  "exp", EXP;

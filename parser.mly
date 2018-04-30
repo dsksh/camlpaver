@@ -53,6 +53,7 @@
 %token IF 
 %token THEN
 %token ELSE 
+%token ENDIF
 
 /* formula expression tokens */
 
@@ -149,13 +150,26 @@ signed_number :
 /**/
 
 constrs :
-  | constr SCOL constrs     { $1::$3 }
+  | grd_constr SCOL constrs { $1::$3 }
   |                         { [] }
+  ;
+
+grd_constr :
+  | constr                  { $1 }
+  | IF constr_l THEN grd_constr_l ENDIF
+                            { loc (), Pif ($2,$4) }
+  | IF constr_l THEN grd_constr_l ELSE grd_constr_l ENDIF
+                            { loc (), PifElse ($2,$4,$6) }
   ;
 
 constr_l :
   | constr                  { [$1] }
-  | LP constr COM constr_l  { $2::$4 }
+  | constr COM constr_l     { $1::$3 }
+  ;
+
+grd_constr_l :
+  | grd_constr              { [$1] }
+  | grd_constr COM grd_constr_l { $1::$3 }
   ;
 
 constr :
@@ -164,10 +178,6 @@ constr :
   | expr LE expr            { loc (), Prel (Ole,$1,$3) }
   | expr GT expr            { loc (), Prel (Ogt,$1,$3) }
   | expr GE expr            { loc (), Prel (Oge,$1,$3) }
-  | IF constr_l THEN constr_l 
-                            { loc (), Pif ($2,$4) }
-  | IF constr_l THEN constr_l ELSE constr_l
-                            { loc (), PifElse ($2,$4,$6) }
   ;
 
 /**/

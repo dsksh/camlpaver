@@ -49,7 +49,7 @@ let () =
     end;
 
     let vs = sc.vn_list in
-    let cs = List.map (fun c -> Constr.make vs c) cs in
+    let cs = List.map (Constr.make vs) cs in
     let cs = Constr.mk_list cs in
     if !Util.debug then begin
       let _ = printf "%a;@.@." print_constr cs in ()
@@ -60,7 +60,7 @@ let () =
       if !Solver.bfs then Solver.extract_queue
       else Solver.extract_stack in
     let iff = 
-      if !Solver.max_n >= 0 then Solver.is_nloops_exceed
+      if !Solver.max_n >= 0 then Solver.is_nloops_exceeded
       else Solver.is_empty in
     let sols = Solver.solve ~extract:ef ~is_finished:iff cs box in
 
