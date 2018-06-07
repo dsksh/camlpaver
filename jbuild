@@ -5,4 +5,4 @@
 
 (executable
   ((name main)
-   (libraries (interval)) ))
+   (libraries (hashcons interval)) ))

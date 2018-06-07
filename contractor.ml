@@ -12,6 +12,7 @@ let init constr box =
   let lhs = Expr.mk_diff_expr (Box.get_vn_list box) e1 e2 in
   let proj = match op with
   | Oeq -> Interval.zero
+  | One -> Interval.whole
   | Olt | Ole -> Interval.negative
   | Ogt | Oge -> Interval.positive
   in

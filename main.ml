@@ -4,6 +4,8 @@ open Pretty
 
 let usage = "usage: main.exe [options] input.bch"
 
+let output_fmt = ref "matlab"
+
 let spec = [
   "-e", Arg.Float (fun e -> Solver.eps := e), 
   " Set the precision of paving";
@@ -13,6 +15,8 @@ let spec = [
   " Use the breadth-first search";
   "-dfs", Arg.Clear Solver.bfs,
   " Use the depth-first search";
+  "-fmt", Arg.String (fun s -> output_fmt := s),
+  " Set the output format";
   "-g", Arg.Set Util.debug, 
   " Set the debug flag";
 ]
@@ -67,13 +71,19 @@ let () =
     (* print the result *)
     if List.length sols = 0 then printf "@.no solution@."
     else
-      let f = ref true in
-      let pr sol = 
-        if !f then f := false else printf ",@]@;@.";
-        printf "@[<2>%a" Pretty_mathematica.print_box sol in
-      printf "{@.";
-      let _ = List.map pr sols in ();
-      printf "@.}@.";
+      match !output_fmt with
+      | "math"
+      | "mathematica" ->
+          let f = ref true in
+          let pr sol = 
+            if !f then f := false else printf ",@]@;@.";
+            printf "@[<2>%a" Pretty_mathematica.print_box sol in
+          printf "{@.";
+          let _ = List.map pr sols in ();
+          printf "@.}@."
+      | "matlab"
+      | _ ->
+          printf "%a" Pretty_matlab.print_sols sols;
 
     ()
   with

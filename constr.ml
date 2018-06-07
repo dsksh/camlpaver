@@ -25,7 +25,7 @@ module Constr_node = struct
   (* TODO *)
   let hash = function
     | C (op,(e1,_),(e2,_)) -> abs (19*(19*e1.hkey + e2.hkey) +
-        (match op with | Oeq -> 1 | Olt -> 2 | Ole -> 3 | Ogt -> 4 | Oge -> 5)
+        (match op with | Oeq -> 1 | One -> 2 | Olt -> 3 | Ole -> 4 | Ogt -> 5 | Oge -> 6)
         + 2 )
     | G (c1,c2) -> abs (23*c1.hkey + c2.hkey + 1)
     | P (c1,c2) -> abs (19*c1.hkey + c2.hkey + 1)
