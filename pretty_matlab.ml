@@ -3,16 +3,16 @@ open Interval
 open Box
 
 let print_vs fmt v_tbl =
-  Format.fprintf fmt "vs = { ";
-  let pr vn _ = fprintf fmt "%s; " vn in
+  fprintf fmt "vs = { ";
+  let pr vn _ = fprintf fmt "'%s'; " vn in
   let _ = Hashtbl.iter pr v_tbl in
   fprintf fmt "};@."
 
 let print_box v_tbl fmt s_id box =
   (* printer for a var name *)
   let pr vn sz v_id =
-    fprintf fmt "data(%d,%d).name = %s;@." s_id v_id vn;
-    fprintf fmt "data(%d,%d).value = [" s_id v_id;
+    fprintf fmt "data(%d,%d).name = '%s';@." (s_id+1) v_id vn;
+    fprintf fmt "data(%d,%d).value = [" (s_id+1) v_id;
 
     (* printer for a step *)
     let rec loop s =
@@ -26,7 +26,7 @@ let print_box v_tbl fmt s_id box =
         loop (s+1)
     in
     loop 0;
-    fprintf fmt "]@.";
+    fprintf fmt "];@.";
     v_id+1
   in
   let _ = Hashtbl.fold pr v_tbl 1 in ()
@@ -53,7 +53,9 @@ let print_sols fmt = function
       let _ = List.map parse_vn vn_l in
 
       (* print *)
+      fprintf fmt "function [vs, data] = solution()@.";
       print_vs fmt v_tbl;
       let _ = List.mapi (print_box v_tbl fmt) sols in
+      fprintf fmt "end@.";
       ()
   | [] -> ()
