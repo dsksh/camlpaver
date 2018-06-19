@@ -58,6 +58,7 @@
 /* formula expression tokens */
 
 %token EQ
+%token NE
 %token LE
 %token LT
 %token GE
@@ -174,6 +175,7 @@ grd_constr_l :
 
 constr :
   | expr EQ expr            { loc (), Prel (Oeq,$1,$3) }
+  | expr NE expr            { loc (), Prel (One,$1,$3) }
   | expr LT expr            { loc (), Prel (Olt,$1,$3) }
   | expr LE expr            { loc (), Prel (Ole,$1,$3) }
   | expr GT expr            { loc (), Prel (Ogt,$1,$3) }

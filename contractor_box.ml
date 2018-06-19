@@ -47,6 +47,10 @@ let shrink is_lower t =
     else if is_empty (Box.get t.box t.vn) then
       Box.set t.box t.vn (join v1 bnd)
 
+    else if v1 = Box.get t.box t.vn then
+      (* TODO *)
+      ()
+
     else begin
       (* cut off the other half of the interval *)
       let v = Box.get t.box t.vn in

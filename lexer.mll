@@ -92,6 +92,7 @@ rule token = parse
   | "#" { lcomment lexbuf } (* TODO *)
 
   | "="  { EQ }
+  | "!=" { NE }
   | "<=" { LE }
   | "<"  { LT }
   | ">=" { GE }

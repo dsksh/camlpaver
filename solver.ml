@@ -43,7 +43,7 @@ let rec select_bb box ctx =
   end
 
 let rec contract c box =
-(*Format.printf "contract: %a@." Pretty.print_constr c;*)
+if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
   if Box.is_empty box then NoSol
   else
     match c.node with
@@ -112,6 +112,7 @@ and check_entailment box c =
 
 and apply_contractors t =
   (* apply HC4 *)
+if !Util.debug then Format.printf "apply HC4@.";
   let r = Contractor_hull.contract t in
   if r == NoSol || r == Proved then r
   else
@@ -123,14 +124,19 @@ and apply_contractors t =
         Contractor.set_var t vn;
         Contractor_box.contract t
       end in
+if !Util.debug then Format.printf "apply BC3@.";
     List.fold_left ctr r (Box.get_vn_list t.box)
 
 
 let split vn box =
   let v0 = Box.get box vn in
+  let v1 =
+    let a = if v0.inf = neg_infinity then -.max_float else v0.inf in
+    let b = if v0.sup = infinity then max_float else v0.sup in
+    Interval.make a b in
+  let m = Interval.mid v1 in
   let b1 = box in
   let b2 = Box.copy box in
-  let m = Interval.mid v0 in
   Box.set b1 vn (Interval.make v0.inf m);
   Box.set b2 vn (Interval.make m v0.sup);
   b1, b2
@@ -155,7 +161,7 @@ let solve
       let ((cs,ctx),box), dq = extract dq in
 if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
       let r = contract cs box in
-(*if !Util.debug then Format.printf "contracted: %a@." Box.print box;*)
+if !Util.debug then Format.printf "contracted: %a@." Box.print box;
       let dq = match r, select_bb box ctx with
       | Proved, _ -> 
           sols := box::(!sols);
@@ -166,6 +172,8 @@ if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
           dq
       | _, Some v ->
           let b1,b2 = split v box in
+if !Util.debug then Format.printf "splitted 1: %a@." Box.print b1;
+if !Util.debug then Format.printf "splitted 2: %a@." Box.print b2;
           let dq = append ((cs, ctx), b1) dq in
           let dq = append ((cs, clone_ctx ctx), b2) dq in dq
       in

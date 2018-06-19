@@ -24,7 +24,8 @@ let set_bwd at expr v =
 
 let rec fwd_eval at box expr = 
   match at.(expr.tag) with 
-  | Some _ -> error Unexpected
+  | Some { fwd=v; _ } -> v (* TODO *)
+
   | None ->
     let rc e = fwd_eval at box e in
   
@@ -150,52 +151,6 @@ printf "v: %a@." Interval.print v; *)
       end else
         raise Empty_result;
 
-    (*begin match op with
-    | Oeq ->
-        (*let v = Interval.intersect v1 v2 in
-        if v <> empty then begin
-          set_bwd at e1 v;
-          bwd_propag at e1 box;
-          set_bwd at e2 v;
-          bwd_propag at e2 box
-        end *)
-        let v = Interval.intersect v1 Interval.zero in
-        if v <> empty then begin
-          set_bwd at e1 v;
-          bwd_propag at e1 box
-        end else
-          box.v.(0) <- empty
-    | Olt
-    | Ole ->
-        (*let v = join (of_float neg_infinity) v2 in
-        set_bwd at e1 (intersect v1 v);
-        bwd_propag at e1 box;
-        let v = join v1 (of_float infinity) in
-        set_bwd at e2 (intersect v2 v);
-        bwd_propag at e2 box *)
-        let v = Interval.intersect v1 Interval.negative in
-        if v <> empty then begin
-          set_bwd at e1 v;
-          bwd_propag at e1 box
-        end else
-          box.v.(0) <- empty
-    | Ogt
-    | Oge ->
-        (*let v = join v2 (of_float infinity) in
-        set_bwd at e1 (intersect v1 v);
-        bwd_propag at e1 box;
-        let v = join (of_float neg_infinity) v1 in
-        set_bwd at e2 (intersect v2 v);
-        bwd_propag at e2 box; *)
-        let v = Interval.intersect v1 Interval.positive in
-        if v <> empty then begin
-          set_bwd at e1 v;
-          bwd_propag at e1 box
-        end else
-          box.v.(0) <- empty
-    end;
-    *)
-  
 (*printf "after bwd:@.";
 printf "%a@." Box.print t.box; *)
 
