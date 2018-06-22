@@ -48,7 +48,7 @@
 let delim  = [' ' '\t' '\r']
 let ws     = delim+
 let digit  = ['0'-'9']
-let letter = ['a'-'z' 'A'-'Z']
+let letter = ['a'-'z' 'A'-'Z' '_']
 let ident  = letter (letter | digit | '_')*
 let number = digit+
 

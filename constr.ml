@@ -49,8 +49,11 @@ let rec make vs = function
       let c1 = if List.length c1 = 1 then List.hd c1 else mk_list c1 in
       let c2 = if List.length c2 = 1 then List.hd c2 else mk_list c2 in
       Hconstr.hashcons ht (G (c1,c2))
-  | _, PifElse _ -> 
-      error (Unsupported "if-then-else")
+  | l1, Pelse ([l2, Prel (op,e1,e2)], c2) -> 
+      let nop = negate_rop op in
+      make vs (l1, Pif ([l2, Prel (nop,e1,e2)], c2))
+  | _, Pelse _ -> 
+      error (Unsupported "if-else")
 
 and mk_list cs = 
   let cmp c1 c2 = compare c1.tag c2.tag in

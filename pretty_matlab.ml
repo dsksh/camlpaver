@@ -11,8 +11,8 @@ let print_vs fmt v_tbl =
 let print_box v_tbl fmt s_id box =
   (* printer for a var name *)
   let pr vn sz v_id =
-    fprintf fmt "data(%d,%d).name = '%s';@." (s_id+1) v_id vn;
-    fprintf fmt "data(%d,%d).value = [" (s_id+1) v_id;
+    fprintf fmt "data(%d,%d).Name = '%s';@." (s_id+1) v_id vn;
+    fprintf fmt "data(%d,%d).Value = [" (s_id+1) v_id;
 
     (* printer for a step *)
     let rec loop s =
@@ -37,16 +37,17 @@ let print_sols fmt = function
       let vn_l = s.s.vn_list in
       let v_tbl = Hashtbl.create (List.length vn_l) in
       let parse_vn vn =
+        (* enumerate var names and find max. indices. *)
         try 
           let il = String.index vn '[' in
           let ir = String.index vn ']' in
           let ind = int_of_string (String.sub vn (il+1) (ir-il-1)) in
           let vn = String.sub vn 0 il in
           if Hashtbl.mem v_tbl vn then
-            (if ind > Hashtbl.find v_tbl vn then
-              Hashtbl.replace v_tbl vn ind)
+            (if ind+1 > Hashtbl.find v_tbl vn then
+              Hashtbl.replace v_tbl vn (ind+1))
           else
-            Hashtbl.add v_tbl vn ind
+            Hashtbl.add v_tbl vn (ind+1)
         with Not_found -> 
             Hashtbl.add v_tbl vn (-1)
       in

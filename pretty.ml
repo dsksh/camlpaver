@@ -31,14 +31,12 @@ let rec print_pconstr fmt = function
       fprintf fmt ")@;then (";
       let _ = List.map pr c2 in
       fprintf fmt ")@]"
-  | _, PifElse (c1,c2,c3) ->
+  | _, Pelse (c1,c2) ->
       let pr c = print_pconstr fmt c in
       fprintf fmt "@[if (";
       let _ = List.map pr c1 in
-      fprintf fmt ")@;then (";
-      let _ = List.map pr c2 in
       fprintf fmt ")@;else (";
-      let _ = List.map pr c3 in
+      let _ = List.map pr c2 in
       fprintf fmt ")@]"
 
 

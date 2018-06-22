@@ -151,16 +151,16 @@ signed_number :
 /**/
 
 constrs :
-  | grd_constr SCOL constrs { $1::$3 }
+  | grd_constr SCOL constrs { List.append $1 $3 }
   |                         { [] }
   ;
 
 grd_constr :
-  | constr                  { $1 }
+  | constr                  { [$1] }
   | IF constr_l THEN grd_constr_l ENDIF
-                            { loc (), Pif ($2,$4) }
+                            { [loc (), Pif ($2,$4)] }
   | IF constr_l THEN grd_constr_l ELSE grd_constr_l ENDIF
-                            { loc (), PifElse ($2,$4,$6) }
+                            { [(loc (), Pif ($2,$4)); (loc (), Pelse ($2,$6))] }
   ;
 
 constr_l :
@@ -169,8 +169,8 @@ constr_l :
   ;
 
 grd_constr_l :
-  | grd_constr              { [$1] }
-  | grd_constr COM grd_constr_l { $1::$3 }
+  | grd_constr              { $1 }
+  | grd_constr COM grd_constr_l { List.append $1 $3 }
   ;
 
 constr :
