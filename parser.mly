@@ -2,6 +2,7 @@
   open Model_common  
   open Ptree
   open Interval
+  open Util
 
   let create_id name idx = String.concat "" [name; "["; string_of_int idx; "]"]
 
@@ -20,7 +21,8 @@
       add_var id_ d;
       add_vars id (n-1) d end
 
-  let get_var id = Hashtbl.find env id
+  let get_var id = try Hashtbl.find env id 
+    with Not_found -> error (UnknownId id)
 
   let loc () = symbol_start_pos (), symbol_end_pos ()
 

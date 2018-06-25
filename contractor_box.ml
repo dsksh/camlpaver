@@ -7,8 +7,8 @@ let the_f t = fst t.lhs
 
 let check_consistency t =
   let v = Expr.eval t.box (the_f t) in
-  if is_strict_superset t.proj v then Proved
-  else if t.proj = zero && width v = 0. then Proved
+  if not t.pointwise && is_strict_superset t.proj v then Proved
+  else if t.proj = zero && is_superset t.proj v then Proved
   else
     let v = intersect v t.proj in
     if is_empty v then NoSol
@@ -75,7 +75,7 @@ let contract t =
     if not (is_consistent true t) then
       shrink true t;
 
-(*printf "after sl: %a@." Box.print t.box;*)
+(*printf "after sl (%s): %a@." t.vn Box.print t.box;*)
 
     if is_empty (Box.get t.box t.vn) then NoSol
 
@@ -84,7 +84,7 @@ let contract t =
       if not (is_consistent false t) then
         shrink false t;
 
-(*printf "after su: %a@." Box.print t.box;*)
+(*printf "after su (%s): %a@." t.vn Box.print t.box;*)
 
       check_consistency t
     end

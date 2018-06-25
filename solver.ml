@@ -2,7 +2,9 @@ open Constr
 open Hashcons
 open Contractor
 
-type t = { mutable last : int; mutable sp : int option; }
+type t = { mutable last : int; mutable sp : int option; 
+  (*id : int;*)
+}
 
 let bfs = ref true
 let eps = ref 1e-2
@@ -35,7 +37,12 @@ let rec select_bb box ctx =
         ctx.sp <- Some ctx.last;
   
       let vn = Box.get_vn box ctx.last in
-      if Interval.width (Box.get box vn) < !eps then
+      if Interval.width (Box.get box vn) <= !eps then
+        select_bb box ctx
+      else if String.length vn >= 2 &&
+              vn.[0] = '_' && vn.[1] = '_' then
+        select_bb box ctx
+      else if vn.[0] = '_' then
         select_bb box ctx
       else
         (ctx.sp <- None; Some vn)
@@ -43,18 +50,49 @@ let rec select_bb box ctx =
   end
 
 let rec contract c box =
-if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
+(*if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;*)
   if Box.is_empty box then NoSol
   else
     match c.node with
     | C (op,e1,e2) -> 
+if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
+        let t = Contractor.init (op,e1,e2) box in
+        apply_contractors t
+
+    | G _ ->
+        Unknown
+
+    | P (c1,c2) -> 
+        let r1 = contract c1 box in
+        if r1 <> NoSol then
+
+          let r2 = contract c2 box in
+
+          (* merge the results *)
+          if r2 <> NoSol then
+            if r1 = Proved && r2 = Proved then Proved
+            else Unknown
+          else NoSol
+
+        else NoSol
+
+    | True -> Proved
+
+and contract_grd c box =
+(*if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;*)
+  if Box.is_empty box then NoSol
+  else
+    match c.node with
+    | C (op,e1,e2) -> 
+if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
         let t = Contractor.init (op,e1,e2) box in
         apply_contractors t
 
     | G (ac,tc) ->
+if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
         let r = check_entailment box ac in
         if r = Proved then
-          contract tc box
+          contract_grd tc box
         else if r = NoSol then
           (* current box certainly not entail the ask constraint,
            * so don't need to process the body *)
@@ -64,10 +102,10 @@ if !Util.debug then Format.printf "contract: %a@." Pretty.print_constr c;
           Unknown
 
     | P (c1,c2) -> 
-        let r1 = contract c1 box in
+        let r1 = contract_grd c1 box in
         if r1 <> NoSol then
 
-          let r2 = contract c2 box in
+          let r2 = contract_grd c2 box in
 
           (* merge the results *)
           if r2 <> NoSol then
@@ -87,13 +125,19 @@ and check_entailment box c =
       let t = Contractor.init (Model_common.negate_rop op,e1,e2) b in
       let r = apply_contractors t in
       (* empty result implies the entailment *)
+(*if r = NoSol then begin 
+  Format.printf "@.entailed: %a@." Pretty.print_constr c;
+  Format.printf "by: %a@.@." Box.print box 
+end;*)
       if r = NoSol then Proved
       else
         (* check if the ask constraint is certainly not entailed *)
         let b = Box.copy box in
         (* set the ask constraint *)
         let t = Contractor.init (op,e1,e2) b in
-        apply_contractors t (* return NoSol or Unknown *)
+        let r = apply_contractors t in 
+        (* return NoSol or Unknown *)
+        if r <> NoSol then Unknown else r
 
   | P (c1,c2) -> 
       let r1 = check_entailment box c1 in
@@ -120,6 +164,8 @@ if !Util.debug then Format.printf "apply HC4@.";
     (* apply BC3 *)
     let ctr r vn =
       if r == NoSol || r == Proved then r
+      else if String.length vn >= 2 && 
+              vn.[0] = '_' && vn.[1] = '_' then Unknown
       else (* Unknown *) begin 
         Contractor.set_var t vn;
         Contractor_box.contract t
@@ -141,7 +187,10 @@ let split vn box =
   Box.set b2 vn (Interval.make m v0.sup);
   b1, b2
 
-let clone_ctx ctx = { last=ctx.last; sp=ctx.sp; }
+let clone_ctx = 
+  (*let num = ref 0 in
+  let gen_id () = num := succ !num; !num in*)
+  fun ctx -> { last=ctx.last; sp=ctx.sp; (*id=gen_id ();*) }
 
 let is_empty _n dq = Deque.is_empty dq
 let is_nloops_exceeded n dq = is_empty n dq || n > !max_n
@@ -152,7 +201,7 @@ let solve
   cs box =
 
   let sols = ref [] in
-  let ctx = { last=0; sp=None; } in
+  let ctx = { last=0; sp=None; (*id=0;*) } in
   let dq = append ((cs,ctx),box) Deque.empty in
 
   let rec loop n dq =
@@ -161,6 +210,9 @@ let solve
       let ((cs,ctx),box), dq = extract dq in
 if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
       let r = contract cs box in
+
+      let r = if r = Unknown then contract_grd cs box else r in
+
 if !Util.debug then Format.printf "contracted: %a@." Box.print box;
       let dq = match r, select_bb box ctx with
       | Proved, _ -> 
@@ -172,6 +224,7 @@ if !Util.debug then Format.printf "contracted: %a@." Box.print box;
           dq
       | _, Some v ->
           let b1,b2 = split v box in
+(*Format.printf "split %d %s@." ctx.id v;*)
 if !Util.debug then Format.printf "splitted 1: %a@." Box.print b1;
 if !Util.debug then Format.printf "splitted 2: %a@." Box.print b2;
           let dq = append ((cs, ctx), b1) dq in

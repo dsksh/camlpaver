@@ -16,7 +16,7 @@ let get_attr at i = match at.(i) with Some a -> a | None -> error Unexpected
 let set_bwd at expr v = 
   let a = get_attr at (expr.tag) in
   let v = intersect v a.bwd in
-  if v != empty then 
+  if not (Interval.is_empty v) then 
     a.bwd <- v
   else
     raise Empty_result
@@ -137,15 +137,15 @@ let contract t =
   let v = fwd_eval at t.box lhs in
 
 (*printf "after fwd:@.";
-printf "v: %a@." Interval.print v; *)
+printf "%a vs. %a@." Interval.print v Interval.print t.proj; *)
 
-  if is_strict_superset t.proj v then Proved
+  if not t.pointwise && is_strict_superset t.proj v then Proved
   else begin
 
     (* backward propagation *)
     try
       let v = Interval.intersect t.proj v in
-      if v <> empty then begin
+      if not (Interval.is_empty v) then begin
         set_bwd at lhs v;
         bwd_propag at lhs t.box
       end else
