@@ -7,11 +7,10 @@ let the_f t = fst t.lhs
 
 let check_consistency t =
   let v = Expr.eval t.box (the_f t) in
-  if not t.pointwise && is_strict_superset t.proj v then Proved
-  else if t.proj = zero && is_superset t.proj v then Proved
+  if is_superset t.proj v && (t.bnd || not (is_contained v 0.)) then Proved
   else
     let v = intersect v t.proj in
-    if is_empty v then NoSol
+    if is_empty v || (not t.bnd && v = Interval.zero) then NoSol
     else Unknown
 
 let is_consistent is_lower t =

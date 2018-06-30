@@ -15,6 +15,8 @@ let spec = [
   " Use the breadth-first search";
   "-dfs", Arg.Clear Solver.bfs,
   " Use the depth-first search";
+  "-sat", Arg.Set Solver.sat,
+  " Exit after one solution box is found";
   "-fmt", Arg.String (fun s -> output_fmt := s),
   " Set the output format";
   "-g", Arg.Set Util.debug, 

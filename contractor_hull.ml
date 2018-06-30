@@ -139,13 +139,15 @@ let contract t =
 (*printf "after fwd:@.";
 printf "%a vs. %a@." Interval.print v Interval.print t.proj; *)
 
-  if not t.pointwise && is_strict_superset t.proj v then Proved
+  if is_superset t.proj v && (t.bnd || not (is_contained v 0.)) then Proved
   else begin
 
     (* backward propagation *)
     try
       let v = Interval.intersect t.proj v in
-      if not (Interval.is_empty v) then begin
+      if not (Interval.is_empty v) &&
+         (t.bnd || v <> Interval.zero) then 
+      begin
         set_bwd at lhs v;
         bwd_propag at lhs t.box
       end else

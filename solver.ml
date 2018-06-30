@@ -7,6 +7,7 @@ type t = { mutable last : int; mutable sp : int option;
 }
 
 let bfs = ref true
+let sat = ref false
 let eps = ref 1e-2
 let max_n = ref (-1)
 
@@ -206,6 +207,7 @@ let solve
 
   let rec loop n dq =
     if is_finished n dq then dq
+    else if !sat && !sols <> [] then dq
     else begin
       let ((cs,ctx),box), dq = extract dq in
 if !Util.debug then Format.printf "@.extract: %a@." Box.print box;
@@ -235,8 +237,9 @@ if !Util.debug then Format.printf "splitted 2: %a@." Box.print b2;
   in 
   let dq = loop 0 dq in
 
-  (* move the boxes left in dq to sols *)
-  let l = Deque.to_list dq in
-  sols := List.append !sols (snd (List.split l));
+  if not !sat then begin
+    (* move the boxes left in dq to sols *)
+    let l = Deque.to_list dq in
+    sols := List.append !sols (snd (List.split l)) end;
 
   !sols

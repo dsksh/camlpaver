@@ -4,7 +4,7 @@ type t = {
   lhs : Expr.t * Expr.t list;
   box : Box.t;
   proj : Interval.t;
-  pointwise : bool;
+  bnd : bool;
   mutable vn : string;
 }
 
@@ -17,11 +17,11 @@ let init constr box =
   | Olt | Ole -> Interval.negative
   | Ogt | Oge -> Interval.positive
   in
-  let pw = match op with
-  | Oeq | One -> true
-  | Olt | Ole | Ogt | Oge -> false
+  let bnd = match op with
+  | Oeq | Ole | Oge -> true
+  | One | Olt | Ogt -> false
   in
-  { lhs=lhs; box=box; proj=proj; pointwise=pw; vn=""; }
+  { lhs=lhs; box=box; proj=proj; bnd=bnd; vn=""; }
 
 let set_var t vn = t.vn <- vn
 
